@@ -1,0 +1,106 @@
+komentarz:
+Czasy wykonania poszczególnych operacji są do siebie bardzo zbliżone, niezależnie od użytego typu biblioteki. Nie ma możliwości jednoznacznego stwierdzenia czy minimalne różnice w czasach są spowodowane różnicami pomiędzy bibliotekami, czy środowiskiem w którym zostały przetestowane.
+
+
+
+static library
+Creating array:
+Real:   0.05 s   User:   0.02 s   System: 0.02 s
+Searching and saving into blocks:
+Real:   0.31 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.09 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.02 s
+Searching and saving into blocks:
+Real:   0.32 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Searching and saving into blocks:
+Real:   0.36 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Searching and saving into blocks:
+Real:   0.09 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+
+shared library
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.34 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.01 s   System: 0.02 s
+Searching and saving into blocks:
+Real:   0.01 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.01 s   System: 0.02 s
+Searching and saving into blocks:
+Real:   0.09 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.32 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Searching and saving into blocks:
+Real:   0.36 s   User:   0.00 s   System: 0.01 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Searching and saving into blocks:
+Real:   0.09 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+
+Dynamic library
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.34 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.01 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.01 s   System: 0.02 s
+Searching and saving into blocks:
+Real:   0.09 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.32 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Searching and saving into blocks:
+Real:   0.36 s   User:   0.00 s   System: 0.01 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Searching and saving into blocks:
+Real:   0.10 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s

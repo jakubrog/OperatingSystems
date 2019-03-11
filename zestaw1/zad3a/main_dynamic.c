@@ -135,6 +135,7 @@ int main(int argc, char **argv){
     }
     deleteArray = dlsym(dl_handle,"deleteArray");
     deleteArray(blockArray);
+    dlclose(dl_handle);
 
     return 0;
 }

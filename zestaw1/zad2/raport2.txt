@@ -1,0 +1,74 @@
+Static library
+Different levels of depth
+ 
+Shallow
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.09 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.08 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+ 
+Deeper
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.01 s   System: 0.02 s
+Searching and saving into blocks:
+Real:   0.01 s   User:   0.00 s   System: 0.01 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+ 
+Deeper
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.12 s   User:   0.00 s   System: 0.01 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.05 s   User:   0.02 s   System: 0.02 s
+Searching and saving into blocks:
+Real:   0.09 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+ 
+Very deep
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.32 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.02 s
+Searching and saving into blocks:
+Real:   0.37 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+ 
+Adding and removing, first two very deep, third swallow
+Creating array:
+Real:   0.04 s   User:   0.02 s   System: 0.01 s
+Searching and saving into blocks:
+Real:   0.33 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
+Searching and saving into blocks:
+Real:   0.37 s   User:   0.00 s   System: 0.01 s
+Delete one block:
+Real:   0.01 s   User:   0.00 s   System: 0.00 s
+Searching and saving into blocks:
+Real:   0.09 s   User:   0.00 s   System: 0.00 s
+Delete one block:
+Real:   0.00 s   User:   0.00 s   System: 0.00 s
