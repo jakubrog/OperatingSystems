@@ -4,10 +4,10 @@
 #include <unistd.h>
 
 double timeDiff(clock_t start, clock_t end){
-    return (double)(end -  start) / sysconf(_SC_CLK_TCK); // whats that?
+    return (double)(end -  start) / sysconf(_SC_CLK_TCK);
 }
 
-//TODO : and what is that
+
 void printTime(clock_t rStartTime, struct tms tmsStartTime, clock_t rEndTime, struct tms tmsEndTime){
     printf("Real:   %.2lf s   ", timeDiff(rStartTime, rEndTime));
     printf("User:   %.2lf s   ", timeDiff(tmsStartTime.tms_utime, tmsEndTime.tms_utime));
@@ -21,7 +21,7 @@ int main(int argc, char **argv){
 
     struct Array *blockArray = NULL;
 
-    clock_t rTime[6] = {0, 0, 0, 0, 0, 0}; /// TODO: whats that
+    clock_t rTime[6] = {0, 0, 0};
     struct tms* tmsTime[6];
 
     for (int i = 0; i < 6; i++) {
@@ -51,7 +51,7 @@ int main(int argc, char **argv){
             rTime[currentTime] = times(tmsTime[currentTime]);
             currentTime++;
 
-            printf("Creating array:\n");  /// TODO: why it looks like that
+            printf("Creating array:\n");  
             printTime(rTime[currentTime-2], *tmsTime[currentTime-2], rTime[currentTime-1], *tmsTime[currentTime-1]);
 
         } else if (strcmp(argv[index], "search_directory") == 0) {

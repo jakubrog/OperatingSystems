@@ -26,25 +26,28 @@ shared:
 clean:
 	rm -f *.o
 
-test: compile
-		echo 'static library -O$(optim)' >> $(FILE)
-		./main_static create_table 10000000 search_directory "/usr" \"*a\" resultFile1 remove_block 0 | tee -a $(FILE)
-		./main_static create_table 10000000 search_directory "/usr" \"*abcdef\" resultFile2 remove_block 0 | tee -a $(FILE)
-		./main_static create_table 10000000 search_directory "/usr/bin" \"aa*abcdef\" resultFile3 remove_block 0 | tee -a $(FILE)
-		./main_static create_table 10000000 search_directory "/usr" \"*abcdef\" resultFile4 remove_block 0 search_directory "/usr" \"*a\" resultFile5 remove_block 0 | tee -a $(FILE)
-		echo 'shared library -O$(optim)' >> $(FILE)
-		./main_shared create_table 10000000 search_directory "/usr" \"*a\" resultFile1 remove_block 0 | tee -a $(FILE)
-		./main_shared create_table 10000000 search_directory "/usr" \"*abcdef\" resultFile2 remove_block 0 | tee -a $(FILE)
-		./main_shared create_table 10000000 search_directory "/usr/bin" \"aa*abcdef\" resultFile3 remove_block 0 | tee -a $(FILE)
-		./main_shared create_table 10000000 search_directory "/usr" \"*abcdef\" resultFile4 remove_block 0 search_directory "/usr" \"*a\" resultFile5 remove_block 0 | tee -a $(FILE)
-		echo 'dynamic library -O$(optim)' >> $(FILE)
-		./main_dynamic create_table 10000000 search_directory "/usr" \"*a\" resultFile1 remove_block 0 | tee -a $(FILE)
-		./main_dynamic create_table 10000000 search_directory "/usr" \"*abcdef\" resultFile2 remove_block 0 | tee -a $(FILE)
-		./main_dynamic create_table 10000000 search_directory "/usr/bin" \"aa*abcdef\" resultFile3 remove_block 0 | tee -a $(FILE)
-		./main_dynamic create_table 10000000 search_directory "/usr" \"*abcdef\" resultFile4 remove_block 0 search_directory "/usr" \"*a\" resultFile5 remove_block 0 | tee -a $(FILE)
+tests:
+		echo 'Static library -O$(optim)' | tee -a $(FILE)
+		./$(MAIN_SRC)_static create_table 10000000 search_directory "/usr" \"*.txt\" resultFile1 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_static create_table 10000000 search_directory "/usr/local/bin" \"*.txt\" resultFile2 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_static create_table 10000000 search_directory "/home" \"*.txt\" resultFile3 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_static create_table 10000000 search_directory "/usr" \"*.txt\" resultFile4 remove_block 0 search_directory "/usr" \"*\"	resultFile5 remove_block 0 search_directory "/home" \"*.txt\" resultFile6 remove_block 0 | tee -a $(FILE)
+		echo ' ' | tee -a $(FILE)
+		echo 'Shared library -O$(optim)' | tee -a $(FILE)
+		./$(MAIN_SRC)_shared create_table 10000000 search_directory "/usr" \"*.txt\" resultFile7 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_shared create_table 10000000 search_directory "/usr/local/bin" \"*.txt\" resultFile8 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_shared create_table 10000000 search_directory "/home" \"*.txt\" resultFile9 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_shared create_table 10000000 search_directory "/usr" \"*.txt\" resultFile10 remove_block 0 search_directory "/usr" \"*\"	resultFile11 remove_block 0 search_directory "/home" \"*.txt\" resultFile 12 remove_block 0 | tee -a $(FILE)
+		echo ' ' | tee -a $(FILE)
+		echo 'Dynamic library -O$(optim)' | tee -a $(FILE)
+		./$(MAIN_SRC)_dynamic create_table 10000000 search_directory "/usr" \"*.txt\" resultFile13 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_dynamic create_table 10000000 search_directory "/usr/local/bin" \"*.txt\" resultFile14 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_dynamic create_table 10000000 search_directory "/home" \"*.txt\" resultFile15 remove_block 0 | tee -a $(FILE)
+		./$(MAIN_SRC)_dynamic create_table 10000000 search_directory "/usr" \"*.txt\" resultFile16 remove_block 0 search_directory "/usr" \"*\"	resultFile17 remove_block 0 search_directory "/home" \"*.txt\" resultFile18 remove_block 0 | tee -a $(FILE)
+		echo ' ' | tee -a $(FILE)
 
 optim_test:
-		make test optim=0
-		make test optim=1
-		make test optim=2
-		make test optim=3
+		make tests optim=0
+		make tests optim=1
+		make tests optim=2
+		make tests optim=3

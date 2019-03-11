@@ -7,10 +7,10 @@
 #include <memory.h>
 
 double timeDiff(clock_t start, clock_t end){
-    return (double)(end -  start) / sysconf(_SC_CLK_TCK); // whats that?
+    return (double)(end -  start) / sysconf(_SC_CLK_TCK);
 }
 
-//TODO : and what is that
+
 void printTime(clock_t rStartTime, struct tms tmsStartTime, clock_t rEndTime, struct tms tmsEndTime){
     printf("Real:   %.2lf s   ", timeDiff(rStartTime, rEndTime));
     printf("User:   %.2lf s   ", timeDiff(tmsStartTime.tms_utime, tmsEndTime.tms_utime));
@@ -18,7 +18,7 @@ void printTime(clock_t rStartTime, struct tms tmsStartTime, clock_t rEndTime, st
 }
 
 
-void *dl_handle;   /// using dynamic library how does is work?
+void *dl_handle;
 struct Array *(*createArray)(int);
 void (*setDirectory)(struct Array*, char*);
 void (*setFile)(struct Array*, char*);
@@ -26,7 +26,6 @@ void (*setResultFile)(struct Array*, char*);
 void (*searchForFile)(struct Array*);
 void (*deleteBlockAtIndex)(struct Array*, int);
 void (*deleteArray)(struct Array*);
-void (*print)();
 
 typedef void *(*arbitrary)();
 
@@ -37,13 +36,10 @@ int main(int argc, char **argv){
         printf("!!! %s\n", dlerror());
         return 1;
     }
-    print = dlsym(dl_handle, "printa");
-    if(print)
-      printf("hello");
 
     struct Array *blockArray = NULL;
 
-    clock_t rTime[6] = {0, 0, 0, 0, 0, 0}; /// TODO: whats that
+    clock_t rTime[6] = {0, 0, 0};
     struct tms* tmsTime[6];
 
     for (int i = 0; i < 6; i++) {
@@ -57,7 +53,6 @@ int main(int argc, char **argv){
 
     for(int index = 0 ; index < argc - 1; index++) {
         int currentTime = 0;
-
         if (strcmp(argv[index], "create_table") == 0) {
 
             index++;
@@ -75,8 +70,10 @@ int main(int argc, char **argv){
             rTime[currentTime] = times(tmsTime[currentTime]);
             currentTime++;
 
-            printf("Creating array:\n");  /// TODO: why it looks like that
+            printf("Creating array:\n");
+
             printTime(rTime[currentTime-2], *tmsTime[currentTime-2], rTime[currentTime-1], *tmsTime[currentTime-1]);
+
 
         } else if (strcmp(argv[index], "search_directory") == 0) {
 
@@ -100,7 +97,9 @@ int main(int argc, char **argv){
             }
             rTime[currentTime] = times(tmsTime[currentTime]);
             currentTime++;
+
             searchForFile = dlsym(dl_handle,"searchForFile");
+
             searchForFile(blockArray);
 
             rTime[currentTime] = times(tmsTime[currentTime]);
@@ -111,14 +110,17 @@ int main(int argc, char **argv){
 
 
         } else if (strcmp(argv[index], "remove_block") == 0) {
+
             int number = 0;
             number = (int) strtol(argv[index], NULL, 10);
 
             rTime[currentTime] = times(tmsTime[currentTime]);
             currentTime++;
 
-            searchForFile = dlsym(dl_handle,"deleteBlockAtIndex");
+
+            deleteBlockAtIndex = dlsym(dl_handle,"deleteBlockAtIndex");
             deleteBlockAtIndex(blockArray, number);
+
 
             rTime[currentTime] = times(tmsTime[currentTime]);
             currentTime++;
@@ -126,6 +128,7 @@ int main(int argc, char **argv){
 
             printf("Delete one block:\n");
             printTime(rTime[currentTime-2], *tmsTime[currentTime-2], rTime[currentTime-1], *tmsTime[currentTime-1]);
+
         }
 
 
