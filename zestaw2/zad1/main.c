@@ -14,19 +14,22 @@
 int generateFile(char *filePath, int numberOfRecords, int recordSize) {
     FILE *file = fopen(filePath, "w+"); // w+ = write + read
 
+    if(numberOfRecords < 1 || recordSize < 1){
+      return 1;
+    }
     if (!file) {
         printf("Cannot open  %s.\n", filePath);
         return 1;
     }
 
-    FILE *random = fopen("/dev/urandom", "r"); // random nb generator, urandom seems to be better than random and rand()
+    FILE *random = fopen("/dev/urandom", "r"); // random nb generator
 
     if (!random) {
         printf("Cannot open /dev/urandom.\n");
         return 1;
     }
 
-    char *tmp = malloc(recordSize * sizeof(char));
+    char *tmp = malloc(recordSize * sizeof(char)); // copy of record
 
     for (int i = 0; i < numberOfRecords; ++i) {
         if (fread(tmp, sizeof(char), (size_t) recordSize, random) != recordSize) {  // copying random into tmp
@@ -98,9 +101,9 @@ int lib_sort(char *path, int numberOfRecords, int recordSize) {
 };
 
 int sys_sort(char *path, int numberOfRecords, int recordSize) {
-    int file = open(path, O_RDWR);
+    int file = open(path, O_RDWR); // O_RDWR - open for reading and writing
 
-    if(file < 0)
+    if(file < 0) // -1 means error
         return 1;
 
     char *tmp1 = malloc(recordSize * sizeof(char));
@@ -153,9 +156,9 @@ int lib_copy(char *path, char *dest, int recordSize, int numberOfRecords) {
     FILE *destination = fopen(dest, "w+");
 
     if (!src)
-        return 4;
-    if (!destination)
         return 1;
+    if (!destination)
+        return 4;
 
     char *tmp = malloc(sizeof(char) * recordSize);
 
@@ -210,14 +213,11 @@ double timeDiff(clock_t start, clock_t end) {
 
 void printTime(clock_t rStartTime, struct tms tmsStartTime, clock_t rEndTime, struct tms tmsEndTime){
     printf("Real:   %.2lf s   ", timeDiff(rStartTime, rEndTime));
-    printf("User:   %.2lf s   ", timeDiff(tmsStartTime.tms_utime, tmsEndTime.tms_utime));
     printf("System: %.2lf s\n", timeDiff(tmsStartTime.tms_stime, tmsEndTime.tms_stime));
 }
 
 
 
-
-/// TODO: add comments and checking whether nb of records and record size are grater than zero
 
 
 int main(int argc, char *argv[]) {
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        int recordSize = (int)strtol(argv[4], NULL, 10);
+        int recordSize = (int)strtol(argv[4], NULL, 10); // converting char to int
         int numberOfRecords = (int)strtol(argv[3], NULL, 10);
         char *path = argv[2];
 
@@ -259,14 +259,13 @@ int main(int argc, char *argv[]) {
 
         if (strcmp(argv[5], "sys") == 0) {
             int currentTime = 0;
+
             rTime[currentTime] = times(tmsTime[currentTime]);
             currentTime++;
-
 
             sys_sort(path, numberOfRecords, recordSize);
 
             rTime[currentTime] = times(tmsTime[currentTime]);
-
             printTime(rTime[0], *tmsTime[0], rTime[1], *tmsTime[1]);
 
         }else if(strcmp(argv[5], "lib") == 0) {
@@ -279,7 +278,7 @@ int main(int argc, char *argv[]) {
 
             rTime[currentTime] = times(tmsTime[currentTime]);
             currentTime++;
-            printTime(rTime[currentTime-2], *tmsTime[currentTime-2], rTime[currentTime-1], *tmsTime[currentTime-1]);
+            printTime(rTime[0], *tmsTime[0], rTime[1], *tmsTime[1]);
 
         }else{
             printf("Wrong sixth argument");

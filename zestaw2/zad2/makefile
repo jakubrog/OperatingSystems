@@ -1,6 +1,5 @@
 CC = gcc -std=c11
 FILE = results
 
-tests:
+compile:
 	$(CC) -o main main.c -O2
-

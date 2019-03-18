@@ -1,0 +1,125 @@
+Comment: 
+Czasy sortowania zależą od ilości rekordów jak również od ich długości. Dla poszczególnych ilości rekordów ilość operacji potrzebnych do posortowania tablicy jest jadnakowa, zmiany w czasie wynikaja wówczas z ilości czasu potrzebnego do zamiany miejscami poszczególnych rekordów, który rośnie wraz z długością rekordu. Jedak najbardziej znaczące różnice wynikają z ilości rekordów a nie ich długości. Korzystanie z funkcji bibliotecznych zazwyczaj skraca czas sortowania. Sortowanie korszystające z funkcji systemowych jak również sortowanie korzsytające z funkcji bibliotecznych, zużywa równie dużo czasu sysemowego, jest on w granicach 80% czasu rzeczywistego. 
+Kopiowanie plików jest operacją bardzo szybką, dla większości rozmiarów testowanych plików jego czas jest poniżej 0.01s, nie zależy ono od ilości i długości rekordów lecz od sumarycznej wielkości pliku. Natomiast zmierzone czasy są na tylke niskie, że nie można z nich wyciągnąć jednoznacznych wniosków.
+
+
+Creating file with 1000 records of size 1: 
+sys sorting file with 1000 records of size 1
+Real:   0.32 s   System: 0.22 s
+sys copy file with 1000 records of size 1
+Real:   0.00 s   System: 0.00 s
+lib sorting file with 1000 records of size 1
+Real:   0.14 s   System: 0.08 s
+lib copy file with 1000 records of size 1
+Real:   0.00 s   System: 0.00 s
+ 
+Creating file with 10000 records of size 1: 
+sys sorting file with 10000 records of size 1
+Real:   30.93 s   System: 22.46 s
+sys copy file with 10000 records of size 1
+Real:   0.04 s   System: 0.03 s
+lib sorting file with 10000 records of size 1
+Real:   12.85 s   System: 6.89 s
+lib copy file with 10000 records of size 1
+Real:   0.00 s   System: 0.00 s
+ 
+Creating file with 1000 records of size 4: 
+sys sorting file with 1000 records of size 4
+Real:   0.40 s   System: 0.28 s
+sys copy file with 1000 records of size 4
+Real:   0.00 s   System: 0.00 s
+lib sorting file with 1000 records of size 4
+Real:   0.22 s   System: 0.14 s
+lib copy file with 1000 records of size 4
+Real:   0.01 s   System: 0.00 s
+ 
+Creating file with 10000 records of size 4: 
+sys sorting file with 10000 records of size 4
+Real:   32.79 s   System: 23.65 s
+sys copy file with 10000 records of size 4
+Real:   0.03 s   System: 0.02 s
+lib sorting file with 10000 records of size 4
+Real:   15.01 s   System: 8.36 s
+lib copy file with 10000 records of size 4
+Real:   0.00 s   System: 0.00 s
+ 
+Creating file with 1000 records of size 512: 
+sys sorting file with 1000 records of size 512
+Real:   0.41 s   System: 0.31 s
+sys copy file with 1000 records of size 512
+Real:   0.00 s   System: 0.00 s
+lib sorting file with 1000 records of size 512
+Real:   0.26 s   System: 0.16 s
+lib copy file with 1000 records of size 512
+Real:   0.00 s   System: 0.00 s
+ 
+Creating file with 10000 records of size 512: 
+sys sorting file with 10000 records of size 512
+Real:   35.61 s   System: 26.15 s
+sys copy file with 10000 records of size 512
+Real:   0.04 s   System: 0.04 s
+lib sorting file with 10000 records of size 512
+Real:   21.63 s   System: 13.44 s
+lib copy file with 10000 records of size 512
+Real:   0.00 s   System: 0.00 s
+ 
+Creating file with 1000 records of size 1024: 
+sys sorting file with 1000 records of size 1024
+Real:   0.41 s   System: 0.31 s
+sys copy file with 1000 records of size 1024
+Real:   0.00 s   System: 0.00 s
+lib sorting file with 1000 records of size 1024
+Real:   0.31 s   System: 0.20 s
+lib copy file with 1000 records of size 1024
+Real:   0.01 s   System: 0.00 s
+ 
+Creating file with 10000 records of size 1024: 
+sys sorting file with 10000 records of size 1024
+Real:   41.77 s   System: 32.30 s
+sys copy file with 10000 records of size 1024
+Real:   0.06 s   System: 0.05 s
+lib sorting file with 10000 records of size 1024
+Real:   28.08 s   System: 19.01 s
+lib copy file with 10000 records of size 1024
+Real:   0.01 s   System: 0.01 s
+ 
+Creating file with 1000 records of size 4096: 
+sys sorting file with 1000 records of size 4096
+Real:   0.70 s   System: 0.58 s
+sys copy file with 1000 records of size 4096
+Real:   0.01 s   System: 0.01 s
+lib sorting file with 1000 records of size 4096
+Real:   0.60 s   System: 0.48 s
+lib copy file with 1000 records of size 4096
+Real:   0.01 s   System: 0.00 s
+ 
+Creating file with 10000 records of size 4096: 
+sys sorting file with 10000 records of size 4096
+Real:   57.91 s   System: 48.51 s
+sys copy file with 10000 records of size 4096
+Real:   0.07 s   System: 0.05 s
+lib sorting file with 10000 records of size 4096
+Real:   70.43 s   System: 57.53 s
+lib copy file with 10000 records of size 4096
+Real:   0.10 s   System: 0.06 s
+ 
+Creating file with 1000 records of size 8192: 
+sys sorting file with 1000 records of size 8192
+Real:   0.88 s   System: 0.78 s
+sys copy file with 1000 records of size 8192
+Real:   0.01 s   System: 0.01 s
+lib sorting file with 1000 records of size 8192
+Real:   1.38 s   System: 1.22 s
+lib copy file with 1000 records of size 8192
+Real:   0.02 s   System: 0.01 s
+ 
+Creating file with 10000 records of size 8192: 
+sys sorting file with 10000 records of size 8192
+Real:   96.87 s   System: 86.40 s
+sys copy file with 10000 records of size 8192
+Real:   0.10 s   System: 0.09 s
+lib sorting file with 10000 records of size 8192
+Real:   88.26 s   System: 75.58 s
+lib copy file with 10000 records of size 8192
+Real:   0.13 s   System: 0.11 s
+ 

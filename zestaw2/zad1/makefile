@@ -1,13 +1,13 @@
 CC = gcc -std=c11
-FILE = results
+FILE = wyniki.txt
 
 tests:
 	$(CC) -o main main.c -O2
-	for l in 1, 4, 512, 1024, 4096, 8192; \
+	for l in 1 4 512 1024 4096 8192; \
 	do \
-				for a in 800, 8000; \
+				for a in 1000 10000; \
 				do \
-							echo "creating file with $$a records of size $$l" | tee -a $(FILE); \
+							echo "Creating file with $$a records of size $$l: " | tee -a $(FILE); \
 							./main generate test_file $$a $$l; \
 							for m in sys lib; \
 							do \
@@ -18,6 +18,7 @@ tests:
 										echo "$$m copy file with $$a records of size $$l" | tee -a $(FILE); \
 										./main copy test_file test_copy $$a $$l $$m | tee -a $(FILE); \
 							done; \
+							echo " " | tee -a $(FILE); \
 							rm test_file; \
 				done; \
 		done; \
