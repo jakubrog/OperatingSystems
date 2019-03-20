@@ -123,3 +123,15 @@ Real:   88.26 s   System: 75.58 s
 lib copy file with 10000 records of size 8192
 Real:   0.13 s   System: 0.11 s
  
+Creating file with 1000 records of size 1: 
+sys sorting file with 1000 records of size 1
+Real:   0.31 s   System: 0.21 s
+sys copy file with 1000 records of size 1
+Real:   0.00 s   System: 0.00 s
+lib sorting file with 1000 records of size 1
+Real:   0.13 s   System: 0.07 s
+lib copy file with 1000 records of size 1
+Real:   0.00 s   System: 0.00 s
+ 
+Creating file with 10000 records of size 1: 
+sys sorting file with 10000 records of size 1

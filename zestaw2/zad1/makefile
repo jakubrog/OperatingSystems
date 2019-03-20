@@ -1,4 +1,4 @@
-CC = gcc -std=c11
+CC = gcc -std=c11 -Wall
 FILE = wyniki.txt
 
 tests:
