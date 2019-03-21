@@ -9,10 +9,10 @@
 #include <time.h>
 #include <dirent.h>
 #include <errno.h>
+#include <ctype.h>
 
 
-////TODO: ADD COUMINICATION BETWEEN PROCESSES AND SOMETHING TO PARARELL
-
+////TODO: just change communicate name
 
 
 struct Files {
@@ -94,8 +94,6 @@ struct Files *parse(char *path) {
     struct Files *result = calloc(1, sizeof(struct Files));
     int files_to_monitor = 0;
 
-
-
     // Open the file
     fp = fopen(path, "r");
 
@@ -114,62 +112,49 @@ struct Files *parse(char *path) {
 
     result->freq_time = calloc((size_t)files_to_monitor, sizeof(int));
 
-    paths = (char **) malloc((files_to_monitor) * sizeof(char *));
+    result->path = (char **) calloc(files_to_monitor , sizeof(char *));
 
     rewind(fp);
-
-    //length of every path
-    size_t path_length[files_to_monitor];
-
-    // number of bytes to move cursor when reading paths from file (due to integer at the end of the row)
-    size_t buff[files_to_monitor];
 
     int index;
 
     char c = (char) getc(fp);
 
     for (int i = 0; i < files_to_monitor; i++) {
-        path_length[i] = 0;
         // loop to measure length of every path
+        char *path_buffor = calloc(2048, sizeof(char));
+        char *number_buffor = calloc(100, sizeof(char));
+
+        int k = 0 ;
+
         while (c != EOF && c != ' ') {
-            c = (char) getc(fp);
-            path_length[i]++;
+            path_buffor[k] = c;
+            c = (char)getc(fp);
+            k++;
         }
-
-        // alocating memory for paths
-        if (c == ' ') {
-            paths[i] = (char *) malloc((path_length[i]) * sizeof(char));
-            c = (char) getc(fp);
-        }
-
-        buff[i] = 0;
-        index = 1;
-
-        // making array with freq_time, converting from char to int and measure length
-        while (c != EOF && c != '\n') {
-            result->freq_time[i] = result->freq_time[i] * index + ((int)c - '0');
-            index*=10;
-            buff[i]++;
+        while (c == ' ') {
             c = (char)getc(fp);
         }
+        index = 0;
 
+       while((int)c >= '0' && (int)c <= '9'){
+            number_buffor[index] = c;
+            c = (char)getc(fp);
+            index++;
+       }
+       if(c == '\n'){
+           c = (char)getc(fp);
+       }
+        result->path[i] = path_buffor;
+        result->freq_time[i] = (int) strtol(number_buffor,NULL, 10);
+
+       free(number_buffor);
     }
 
     // coming back to beginning of file
-    rewind(fp);
 
-    for (int i = 0;i < files_to_monitor; i++) {
-        // reading paths from file to array
-        if (path_length[i]  != fread(paths[i],sizeof(char), path_length[i] , fp)) {
-            printf("Cannot read from file");
-            exit(1);
-        }
-        // move cursor to next line
-        fseek(fp, buff[i], SEEK_CUR);
-    }
 
     fclose(fp);
-    result->path = paths;
     result->files_to_monitor = files_to_monitor;
 
     return result;
@@ -191,6 +176,7 @@ void monitor_copy_type(char *path, int monitoring_time, unsigned int monitor_fre
 
     while (elapsed_time(start) < monitoring_time) {
         lstat(path, &file_stat);
+        printf("cp %s %s \n", path, get_file_name(file_stat.st_mtime, path));
         if (file_stat.st_mtime > last_mod) {
             if (fork() == 0) {
                 execlp("cp", "cp", path, get_file_name(file_stat.st_mtime, path), NULL);
@@ -283,24 +269,29 @@ void create_archive(char * path){
 
 int main(int argc, char **argv) {
 
-    if(argc < 3){
+    if(argc < 2){
         printf("Not enough arguments");
         return 1;
     }
     struct Files *files = parse(argv[1]);
 
     create_archive(get_directory_path(argv[1]));
+    pid_t pid[files->files_to_monitor];
+    int stat;
 
     for(int i = 0; i < files->files_to_monitor; i++){
-        int pid = fork();
-        if(pid == 0){
+        pid[i] = fork();
+        if(pid[i] == 0){
             monitor_copy_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i]);
-           // exit(0);
-        }else{
-            wait(NULL);
         }
     }
-
+    for (int i=0; i<files->files_to_monitor; i++)
+    {
+        pid_t cpid = waitpid(pid[i], &stat, 0);
+        if (WIFEXITED(stat))
+            printf("Child PID: %d terminated with status: %d\n",
+                   cpid, WEXITSTATUS(stat));
+    }
 
     return 0;
 }
