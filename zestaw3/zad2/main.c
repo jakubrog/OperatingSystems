@@ -12,12 +12,14 @@
 #include <ctype.h>
 
 
-////TODO: just change communicate name
+// First argument is path to file which contains paths with time
+// Second argument is time of watching
+// third argumnt: copy - use copy type of monitor, else it will use second type
 
 
 struct Files {
     char **path;   // array of paths to every file
-    int *freq_time; // monitoring time to every file
+    int *freq_time; // monitoring time of every file
     int files_to_monitor;  // number of files to monitor
 };
 
@@ -33,8 +35,7 @@ double elapsed_time(time_t start) {
 char *get_directory_path(char *fullpath) {
     char *e = strrchr(fullpath, '/');
     if (!e) {
-        char *buf = strdup(fullpath);
-        return buf;
+        return fullpath;
     }
     int index = (int) (e - fullpath);
     char *s = (char *) malloc(sizeof(char) * (index + 1));
@@ -48,14 +49,14 @@ char *get_directory_path(char *fullpath) {
 char *get_file_name(time_t time1, char *path) {
     struct tm *time = localtime(&time1);
     char *result = calloc(strlen(path) + 20, sizeof(char));
-    char *temp = calloc(3, sizeof(char));
+    char *temp = calloc(30, sizeof(char));
 
     strcat(result, get_directory_path(path));
     strcat(result, "/archive/");
     strcat(result, basename(path));
     strcat(result, "_");
 
-    sprintf(temp, "%d", time->tm_year + 1900);
+   sprintf(temp, "%d", time->tm_year + 1900);
 
     strcat(result, temp);
     strcat(result, "-");
@@ -90,7 +91,6 @@ char *get_file_name(time_t time1, char *path) {
 struct Files *parse(char *path) {
 
     FILE *fp;
-    char **paths;
     struct Files *result = calloc(1, sizeof(struct Files));
     int files_to_monitor = 0;
 
@@ -121,7 +121,7 @@ struct Files *parse(char *path) {
     char c = (char) getc(fp);
 
     for (int i = 0; i < files_to_monitor; i++) {
-        // loop to measure length of every path
+        // buffers to keep temporary data
         char *path_buffor = calloc(2048, sizeof(char));
         char *number_buffor = calloc(100, sizeof(char));
 
@@ -151,9 +151,6 @@ struct Files *parse(char *path) {
        free(number_buffor);
     }
 
-    // coming back to beginning of file
-
-
     fclose(fp);
     result->files_to_monitor = files_to_monitor;
 
@@ -162,20 +159,18 @@ struct Files *parse(char *path) {
 }
 
 void monitor_copy_type(char *path, int monitoring_time, unsigned int monitor_freq) {
-    FILE *fp = fopen(path, "r+");
-
     int result = 0;
 
     struct stat file_stat;
 
-    lstat(path, &file_stat);
+    stat(path, &file_stat);
 
     time_t start = time(NULL);
 
     time_t last_mod = 0;
 
     while (elapsed_time(start) < monitoring_time) {
-        lstat(path, &file_stat);
+        stat(path, &file_stat);
         printf("cp %s %s \n", path, get_file_name(file_stat.st_mtime, path));
         if (file_stat.st_mtime > last_mod) {
             if (fork() == 0) {
@@ -211,7 +206,7 @@ void monitor_second_type(char *path, int monitoring_time, unsigned int monitor_f
 
     struct stat file_stat;
 
-    lstat(path, &file_stat);
+    stat(path, &file_stat);
 
 
     // load file into memory
@@ -224,7 +219,7 @@ void monitor_second_type(char *path, int monitoring_time, unsigned int monitor_f
 
 
     while (elapsed_time(start) < monitoring_time) {
-        lstat(path, &file_stat);
+        stat(path, &file_stat);
         if (file_stat.st_mtime > last_mod) {
 
             copy = fopen(get_file_name(file_stat.st_mtime, path), "w+");
@@ -269,7 +264,7 @@ void create_archive(char * path){
 
 int main(int argc, char **argv) {
 
-    if(argc < 2){
+    if(argc < 3){
         printf("Not enough arguments");
         return 1;
     }
@@ -282,14 +277,18 @@ int main(int argc, char **argv) {
     for(int i = 0; i < files->files_to_monitor; i++){
         pid[i] = fork();
         if(pid[i] == 0){
+          if(argc > 3 && strcmp(argv[3], "copy") == 0)
             monitor_copy_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i]);
+          else{
+            monitor_second_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i]);
+          }
         }
     }
     for (int i=0; i<files->files_to_monitor; i++)
     {
         pid_t cpid = waitpid(pid[i], &stat, 0);
         if (WIFEXITED(stat))
-            printf("Child PID: %d terminated with status: %d\n",
+            printf("Proces PID: %d utworzył %d kopii pliku\n",
                    cpid, WEXITSTATUS(stat));
     }
 

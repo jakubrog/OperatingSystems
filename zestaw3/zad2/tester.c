@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <time.h>
 
+// First argument - file to edit
+// Second argument - min frequency
+// Third argument - max frequency
+// Fourth argument - nb of bytes to add
 
 int generateFile(char *filePath, int bytes, int pmin, int pmax) {
     FILE *file = fopen(filePath, "r+"), *random;
@@ -26,7 +30,7 @@ int generateFile(char *filePath, int bytes, int pmin, int pmax) {
     time_t timer;
     char time_string[26];
     struct tm* tm_info;
-    file = fopen(filePath, "a+");
+    file = fopen(filePath, "a");
     srand(time(NULL));
 
     //main generating loop
@@ -59,7 +63,9 @@ int generateFile(char *filePath, int bytes, int pmin, int pmax) {
 
         tmp[bytes - 1] = 10; // line feed (starting new line in a file after copying into it), it's also last byte in block
 
-        fprintf(file, "PID: %d SECONDS: %d  %s  %s", process_id, seconds, time_string, tmp);
+        fprintf(file, "PID: %d SECONDS: %d  %s  %s\n", process_id, seconds, time_string, tmp);
+        fflush(file);
+
 
 
         fclose(random);

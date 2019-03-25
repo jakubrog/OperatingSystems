@@ -3,6 +3,4 @@ FILE = results
 
 compile:
 	$(CC) -o main main.c -O2
-
-test:
-	./main /home '>' "2019-03-25 18:20"
+	$(CC) -o tester tester.c -O2
