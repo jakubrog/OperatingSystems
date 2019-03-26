@@ -12,7 +12,8 @@ tests: compile
 	./main $(PWD)/list 15 copy
 	./tester $(PWD)/test1 1 4 10
 	./tester $(PWD)/test2 1 10 20
-	./main $(PWD)/list 15 nocopy
+	./main $(PWD)/list 15 nocopy 100 10000
+	./main $(PWD)/list 15 copy 100 10000
 	rm test1 test2
 
 clean:

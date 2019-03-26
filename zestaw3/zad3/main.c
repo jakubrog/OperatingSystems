@@ -158,7 +158,7 @@ struct Files *parse(char *path) {
 
 }
 
-void monitor_copy_type(char *path, int monitoring_time, unsigned int monitor_freq) {
+void monitor_copy_type(char *path, int monitoring_time, unsigned int monitor_freq, rlim_t cpu_limit, rlim_t memory_limit) {
     int result = 0;
 
     struct stat file_stat;
@@ -168,6 +168,24 @@ void monitor_copy_type(char *path, int monitoring_time, unsigned int monitor_fre
     time_t start = time(NULL);
 
     time_t last_mod = 0;
+
+    struct rlimit cpu_rlim;
+    struct rlimit memory_rlim;
+
+    cpu_rlim.rlim_cur = cpu_limit;
+    cpu_rlim.rlim_max = cpu_limit;
+
+    memory_rlim.rlim_cur = memory_limit;
+    memory_rlim.rlim_max = memory_limit;
+
+    if(setrlimit(RLIMIT_CPU, &cpu_rlim) != 0){
+      printf("%s\n", "Cannot set cpu_limit");
+      exit(-1);
+    }
+    if(setrlimit(RLIMIT_AS, &memory_rlim) != 0){
+      printf("%s\n", "Cannot set cpu_limit");
+        exit(-1);
+    }
 
     while (elapsed_time(start) < monitoring_time) {
         stat(path, &file_stat);
@@ -196,7 +214,7 @@ char * load_file_to_memory(FILE *fp){
 }
 
 
-void monitor_second_type(char *path, int monitoring_time, unsigned int monitor_freq){
+void monitor_second_type(char *path, int monitoring_time, unsigned int monitor_freq, rlim_t cpu_limit, rlim_t memory_limit){
 
     FILE *fp = fopen(path, "r+");
     FILE *copy;
@@ -207,6 +225,26 @@ void monitor_second_type(char *path, int monitoring_time, unsigned int monitor_f
 
     stat(path, &file_stat);
 
+    struct rlimit cpu_rlim;
+    struct rlimit memory_rlim;
+
+
+    cpu_rlim.rlim_cur = cpu_limit;
+    cpu_rlim.rlim_max = cpu_limit;
+
+    memory_rlim.rlim_cur = memory_limit;
+    memory_rlim.rlim_max = memory_limit;
+
+    memory_rlim.rlim_cur = memory_limit;
+
+    if(setrlimit(RLIMIT_CPU, &cpu_rlim) != 0){
+      printf("%s\n", "Cannot set cpu_limit");
+      return ;
+    }
+    if(setrlimit(RLIMIT_AS, &memory_rlim) != 0){
+      printf("%s\n", "Cannot set cpu_limit");
+        exit(EXIT_FAILURE);
+    }
 
     // load file into memory
     char *buffer = load_file_to_memory(fp);
@@ -263,14 +301,13 @@ void create_archive(char * path){
 
 int main(int argc, char **argv) {
 
-    if(argc < 3){
+    if(argc < 6){
         printf("Not enough arguments");
         return 1;
     }
     struct Files *files = parse(argv[1]);
 
     create_archive(get_directory_path(argv[1]));
-    printf("%s\n", argv[1]);
     pid_t pid[files->files_to_monitor];
     int stat;
 
@@ -278,18 +315,28 @@ int main(int argc, char **argv) {
         pid[i] = fork();
         if(pid[i] == 0){
           if(argc > 3 && strcmp(argv[3], "copy") == 0)
-            monitor_copy_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i]);
+            monitor_copy_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i], (int) strtol(argv[4],NULL, 10),(int) strtol(argv[5],NULL, 10));
           else{
-            monitor_second_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i]);
+            monitor_second_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i],(int) strtol(argv[4],NULL, 10),(int) strtol(argv[5],NULL, 10));
           }
         }
     }
     for (int i=0; i<files->files_to_monitor; i++)
     {
-        pid_t cpid = waitpid(pid[i], &stat, 0);
-        if (WIFEXITED(stat))
+      struct rusage before;
+       struct rusage after;
+       if(getrusage(RUSAGE_CHILDREN, &before) != 0) {
+           return 1;
+       }
+       pid_t cpid = waitpid(pid[i], &stat, 0);
+       if(getrusage(RUSAGE_CHILDREN, &after) != 0) {
+           return 1;
+       }
+        if (WIFEXITED(stat))  // check if process closed normally
             printf("Proces PID: %d utworzył %d kopii pliku\n",
                    cpid, WEXITSTATUS(stat));
+        printf("user time: %08ld\n", after.ru_utime.tv_usec - before.ru_utime.tv_usec);
+        printf("system time: %08ld\n", after.ru_stime.tv_usec - before.ru_stime.tv_usec);
     }
 
     return 0;
