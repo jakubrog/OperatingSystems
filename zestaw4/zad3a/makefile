@@ -2,8 +2,8 @@ CC = gcc -std=c11 -Wall
 FILE = results
 
 compile:
-	$(CC) -o main1 main1.c -O2
-	$(CC) -o main1 main2.c -O2
+	$(CC) -o catcher catcher.c -O2
+	$(CC) -o tester tester.c -O2
 
 
 clean:

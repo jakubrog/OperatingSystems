@@ -5,6 +5,7 @@
 #include <signal.h>
 
 int wait = 0;
+int alive_process = 1;
 
 void stop_signal(int sig_num) {
     if(wait == 0) {
@@ -25,16 +26,26 @@ int main(int argc, char** argv) {
     action.sa_handler = stop_signal;
     action.sa_flags = 0;
 
-    time_t t = time(NULL);
+    pid = fork();
+    if (pid == 0){
+        execl("./script.sh", "./script.sh", NULL);
+        exit(0);
+    }
 
     while(1){
-        sigaction(SIGTSTP, &action, NULL);
-        signal(SIGINT, int_signal);
+      sigaction(SIGTSTP, &action, NULL);
+      signal(SIGINT, int_signal);
+      if(!wait){
+        if(!alive_process){
+          alive_process == 0;
 
-        if (!wait) {
-            struct tm tm = *localtime(&t);
-            printf("%d-%d-%d %d:%d:%d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+          pid = fork();
+          if(pid == 0){
+            execl("./script.sh", "./script.sh", NULL);
+            exit(0);
+          }
         }
-        sleep(1);
+        }
+      }
     }
 }
