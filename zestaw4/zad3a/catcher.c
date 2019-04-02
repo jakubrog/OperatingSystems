@@ -1,4 +1,4 @@
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -24,14 +24,15 @@ int main(int argc, char *argv[]) {
 
     struct sigaction act;
     act.sa_sigaction = handler;
-    act.sa_flags = SA_SIGINFO;
+    act.sa_flags = 0;
     printf("%d\n", getpid());
 
-    while(end == 0) {
-        sigaction(SIGUSR1, &act, NULL);
-        sigaction(SIGRTMIN, &act, NULL);
-        sigaction(SIGUSR2, &act, NULL);
-        sigaction(SIGINT, &act, NULL);
+    sigaction(SIGUSR1, &act, NULL);
+    sigaction(SIGRTMIN, &act, NULL);
+    sigaction(SIGUSR2, &act, NULL);
+    sigaction(SIGINT, &act, NULL);
+    while(1) {
+        pause();
     }
     return 0;
 }
@@ -40,13 +41,12 @@ void handler(int sig_num, siginfo_t *info, void *context){
         received ++;
         return;
     }else if(sig_num == SIGUSR2 || sig_num == SIGINT){
-        pid = info->si_pid;
         for(; sent < received; sent++)
-            kill(pid, SIGUSR1);
-        kill(pid, SIGUSR2);
+            kill(info->si_pid, SIGUSR1);
+        kill(info->si_pid, SIGUSR2);
         end = 1;
         printStats();
-        return;
+        exit(0);
     }
     printf("Unexpected signal\n");
 }

@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <libgen.h>
 #include <stdlib.h>
@@ -25,6 +26,7 @@ struct Files {
 
 int process_stopped = 0;
 int killed = 0;
+
 
 /// elapsed_time - difference between start time and current time
 double elapsed_time(time_t start) {
@@ -175,6 +177,9 @@ void stop_handler(int sig_num) {
 void start_handler(int sig_num) {
     process_stopped = 0;
 }
+void end_handler(int sig_num) {
+    killed = 1;
+}
 
 
 
@@ -182,9 +187,11 @@ void monitor(char *path, unsigned int monitor_freq){
 
     FILE *fp = fopen(path, "r+");
     FILE *copy;
+    int result = 0;
 
     struct sigaction stop_action;
     struct sigaction start_action;
+    struct sigaction end_action;
 
     stop_action.sa_handler = stop_handler;
     stop_action.sa_flags = 0;
@@ -192,8 +199,11 @@ void monitor(char *path, unsigned int monitor_freq){
     start_action.sa_handler = start_handler;
     start_action.sa_flags = 0;
 
+    start_action.sa_handler = end_handler;
+    start_action.sa_flags = 0;
 
-    int result = 0;
+
+
     struct stat file_stat;
 
     stat(path, &file_stat);
@@ -203,8 +213,6 @@ void monitor(char *path, unsigned int monitor_freq){
     char *buffer = load_file_to_memory(fp);
     fclose(fp);
     time_t last_mod = file_stat.st_mtime;
-
-    time_t start = time(NULL);
 
 
 
@@ -234,7 +242,9 @@ void monitor(char *path, unsigned int monitor_freq){
         }
         sigaction(SIGUSR2, &stop_action, NULL);
         sigaction(SIGUSR1, &start_action, NULL);
+        sigaction(SIGINT, &end_action, NULL);
     }
+
 }
 
 
@@ -298,7 +308,7 @@ int main(int argc, char **argv) {
 
     while(1){
         scanf("%s", buf);
-  
+
 
         if(strcmp(buf, "LIST") == 0){
             list(pid, active, files->path, files->files_to_monitor);
@@ -332,19 +342,18 @@ int main(int argc, char **argv) {
 
         }
         else if(strcmp(buf, "END") == 0){
+            for(int i = 0; i < files->files_to_monitor; i++)
+                kill(pid[i], SIGINT);
             break;
         }
     }
 
 
-    for (int i=0; i<files->files_to_monitor; i++)
-    {
-        pid_t cpid = waitpid(pid[i], &stat, 0);
-        if (WIFEXITED(stat))
-            printf("Proces PID: %d utworzył %d kopii pliku\n",
-                   cpid, WEXITSTATUS(stat));
+    for (int i=0; i<files->files_to_monitor; i++){
+        waitpid(pid[i], &stat, 0);
+        printf("Proces PID: %d utworzył %d kopii pliku\n",
+                pid[i], WEXITSTATUS(stat));
     }
 
     return 0;
 }
-

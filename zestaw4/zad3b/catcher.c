@@ -1,4 +1,4 @@
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -39,7 +39,7 @@ void handler(int sig_num, siginfo_t *info, void *context){
     if(sig_num == SIGUSR1 || sig_num == SIGRTMIN){
         kill(pid, SIGUSR2);
         sleep(1);
-        received ++;
+        received++;
         return;
     }else if(sig_num == SIGUSR2 || sig_num == SIGINT){
         pid = info->si_pid;
@@ -48,7 +48,7 @@ void handler(int sig_num, siginfo_t *info, void *context){
         kill(pid, SIGUSR2);
         end = 1;
         printStats();
-        return;
+        exit(1);
     }
     printf("Unexpected signal\n");
 }

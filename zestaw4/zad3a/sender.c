@@ -1,4 +1,4 @@
-
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (signal_type < 1 || signal_type > 3) {
-        printf("Signal type is 1 2 or 3 \n");
+        printf("Signal type is 1 - KILL, 2 - SIGQUEUE or 3 - SIGRT \n");
         exit(1);
     }
 

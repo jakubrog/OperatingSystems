@@ -1,12 +1,10 @@
-
-#include <stdio.h>
+#define _GNU_SOURCE
 #include <stdlib.h>
-#include <signal.h>
+#include <stdio.h>
 #include <unistd.h>
-#include <memory.h>
-
-void handler(int, siginfo_t *, void *);
-
+#include <signal.h>
+#include <string.h>
+#include <sys/types.h>
 
 int signals_to_send;
 int signal_type;
@@ -15,15 +13,9 @@ pid_t pid;
 int sent = 0;
 int confirmed = 0;
 
-void printStats() {
-    printf("Signals sent: %d\n", sent);
-    printf("Signals received from catcher: %d\n", received);
-}
-
-void confirmation(int sig_num, siginfo_t *info, void *context){
-      confirmed = 1;
-
-}
+void handler(int sig_num, siginfo_t *info, void *context) ;
+void printStats();
+void confirmation(int sig_num, siginfo_t *info, void *context);
 
 
 int main(int argc, char *argv[]) {
@@ -90,7 +82,6 @@ int main(int argc, char *argv[]) {
     }
 }
 
-
 void handler(int sig_num, siginfo_t *info, void *context) {
     if (sig_num == SIGUSR2 || sig_num == SIGINT) {
         kill(pid, SIGINT);
@@ -105,4 +96,13 @@ void handler(int sig_num, siginfo_t *info, void *context) {
         received++;
     } else if (signal_type == 3 && sig_num == SIGRTMIN)
         received++;
+}
+
+void printStats() {
+    printf("Signals sent: %d\n", sent);
+    printf("Signals received from catcher: %d\n", received);
+}
+
+void confirmation(int sig_num, siginfo_t *info, void *context){
+      confirmed = 1;
 }

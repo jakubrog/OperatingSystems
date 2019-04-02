@@ -23,6 +23,8 @@ struct Files {
     int files_to_monitor;  // number of files to monitor
 };
 
+int process_stopped = 0;
+int killed = 0;
 
 
 /// elapsed_time - difference between start time and current time
@@ -56,7 +58,7 @@ char *get_file_name(time_t time1, char *path) {
     strcat(result, basename(path));
     strcat(result, "_");
 
-   sprintf(temp, "%d", time->tm_year + 1900);
+    sprintf(temp, "%d", time->tm_year + 1900);
 
     strcat(result, temp);
     strcat(result, "-");
@@ -137,18 +139,18 @@ struct Files *parse(char *path) {
         }
         index = 0;
 
-       while((int)c >= '0' && (int)c <= '9'){
+        while((int)c >= '0' && (int)c <= '9'){
             number_buffor[index] = c;
             c = (char)getc(fp);
             index++;
-       }
-       if(c == '\n'){
-           c = (char)getc(fp);
-       }
+        }
+        if(c == '\n'){
+            c = (char)getc(fp);
+        }
         result->path[i] = path_buffor;
         result->freq_time[i] = (int) strtol(number_buffor,NULL, 10);
 
-       free(number_buffor);
+        free(number_buffor);
     }
 
     fclose(fp);
@@ -158,33 +160,6 @@ struct Files *parse(char *path) {
 
 }
 
-void monitor_copy_type(char *path, int monitoring_time, unsigned int monitor_freq) {
-    int result = 0;
-
-    struct stat file_stat;
-
-    stat(path, &file_stat);
-
-    time_t start = time(NULL);
-
-    time_t last_mod = 0;
-
-    while (elapsed_time(start) < monitoring_time) {
-        stat(path, &file_stat);
-        if (file_stat.st_mtime > last_mod) {
-            if (fork() == 0) {
-                execlp("cp", "cp", path, get_file_name(file_stat.st_mtime, path), NULL);
-                exit(0);
-            }else{
-                wait(NULL);
-            }
-            last_mod = file_stat.st_mtime;
-            result++;
-        }
-        sleep(monitor_freq);
-    }
-    exit(result);
-}
 char * load_file_to_memory(FILE *fp){
     fseek(fp, 0, SEEK_END);
     long fsize = ftell(fp);
@@ -195,13 +170,38 @@ char * load_file_to_memory(FILE *fp){
     return buffer;
 }
 
+void stop_handler(int sig_num) {
+    process_stopped = 1;
+}
+void start_handler(int sig_num) {
+    process_stopped = 0;
+}
+void end_handler(int sig_num) {
+    killed = 1;
+}
 
-void monitor_second_type(char *path, int monitoring_time, unsigned int monitor_freq){
+
+
+void monitor(char *path, unsigned int monitor_freq){
 
     FILE *fp = fopen(path, "r+");
     FILE *copy;
-
     int result = 0;
+
+    struct sigaction stop_action;
+    struct sigaction start_action;
+    struct sigaction end_action;
+
+    stop_action.sa_handler = stop_handler;
+    stop_action.sa_flags = 0;
+
+    start_action.sa_handler = start_handler;
+    start_action.sa_flags = 0;
+
+    start_action.sa_handler = end_handler;
+    start_action.sa_flags = 0;
+
+
 
     struct stat file_stat;
 
@@ -217,31 +217,39 @@ void monitor_second_type(char *path, int monitoring_time, unsigned int monitor_f
 
 
 
-    while (elapsed_time(start) < monitoring_time) {
-        stat(path, &file_stat);
-        if (file_stat.st_mtime > last_mod) {
+    while(!killed) {
+        if(!process_stopped) {
+            stat(path, &file_stat);
+            if (file_stat.st_mtime > last_mod) {
 
-            copy = fopen(get_file_name(file_stat.st_mtime, path), "w+");
+                copy = fopen(get_file_name(file_stat.st_mtime, path), "w+");
 
-            if(fputs(buffer, copy) == EOF){
-                printf("Error while writing to file.");
-                exit(0);
+                if (fputs(buffer, copy) == EOF) {
+                    printf("Error while writing to file.");
+                    exit(0);
+                }
+
+                fclose(copy);
+                free(buffer);
+
+                fopen(path, "r+");
+                buffer = load_file_to_memory(fp);
+                fclose(fp);
+
+                last_mod = file_stat.st_mtime;
+                result++;
             }
-
-            fclose(copy);
-            free(buffer);
-
-            fopen(path, "r+");
-            buffer = load_file_to_memory(fp);
-            fclose(fp);
-
-            last_mod = file_stat.st_mtime;
-            result++;
+            sleep(monitor_freq);
         }
-        sleep(monitor_freq);
+        sigaction(SIGUSR2, &stop_action, NULL);
+        sigaction(SIGUSR1, &start_action, NULL);
+        sigaction(SIGINT, &end_action, NULL);
     }
-    exit(result);
+
 }
+
+
+
 
 void create_archive(char * path){
     char *full_path = calloc(1024, sizeof(char));
@@ -260,10 +268,18 @@ void create_archive(char * path){
     free(full_path);
 }
 
+void list(int *pid, const int *active, char **path, int n){
+
+    for (int i=0; i<n; i++){
+        if(active[i])
+            printf("PID: %d  FILE: %s\n", pid[i], path[i]);
+    }
+}
+
 
 int main(int argc, char **argv) {
 
-    if(argc < 3){
+    if(argc < 1){
         printf("Not enough arguments");
         return 1;
     }
@@ -271,25 +287,73 @@ int main(int argc, char **argv) {
 
     create_archive(get_directory_path(argv[1]));
     printf("%s\n", argv[1]);
+
     pid_t pid[files->files_to_monitor];
+
+    int active[files->files_to_monitor];
+
     int stat;
 
     for(int i = 0; i < files->files_to_monitor; i++){
         pid[i] = fork();
+        active[i] = 1;
         if(pid[i] == 0){
-          if(argc > 3 && strcmp(argv[3], "copy") == 0)
-            monitor_copy_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i]);
-          else{
-            monitor_second_type(files->path[i], (int) strtol(argv[2],NULL, 10), (unsigned) files->freq_time[i]);
-          }
+                monitor(files->path[i], (unsigned) files->freq_time[i]);
+            }
+    }
+
+    list(pid, active, files->path, files->files_to_monitor);
+
+    char *buf = malloc(20 * sizeof(char));
+    int input_pid;
+
+    while(1){
+        scanf("%s", buf);
+
+
+        if(strcmp(buf, "LIST") == 0){
+            list(pid, active, files->path, files->files_to_monitor);
+        }
+        else if(strcmp(buf, "STOP") == 0){
+            scanf("%d", &input_pid);
+            for(int i = 0; i < files->files_to_monitor; i++)
+                if(pid[i] == input_pid){
+                    kill(pid[i], SIGUSR2);
+                    active[i] = 0;
+                }
+        }
+        else if(strcmp(buf, "START") == 0){
+            scanf("%d", &input_pid);
+            for(int i = 0; i < files->files_to_monitor; i++)
+                if(pid[i] == input_pid){
+                    kill(pid[i], SIGUSR1);
+                    active[i] = 1;
+                }
+        }
+        else if(strcmp(buf, "STARTALL") == 0){
+            for(int i = 0; i < files->files_to_monitor; i++){
+                    kill(pid[i], SIGUSR1);
+                    active[i] = 1;
+                }
+        }  else if(strcmp(buf, "STOPALL") == 0){
+            for(int i = 0; i < files->files_to_monitor; i++) {
+                kill(pid[i], SIGUSR2);
+                active[i] = 0;
+            }
+
+        }
+        else if(strcmp(buf, "END") == 0){
+            for(int i = 0; i < files->files_to_monitor; i++)
+                kill(pid[i], SIGINT);
+            break;
         }
     }
-    for (int i=0; i<files->files_to_monitor; i++)
-    {
-        pid_t cpid = waitpid(pid[i], &stat, 0);
-        if (WIFEXITED(stat))
-            printf("Proces PID: %d utworzył %d kopii pliku\n",
-                   cpid, WEXITSTATUS(stat));
+
+
+    for (int i=0; i<files->files_to_monitor; i++){
+        waitpid(pid[i], &stat, 0);
+        printf("Proces PID: %d utworzył %d kopii pliku\n",
+                pid[i], WEXITSTATUS(stat));
     }
 
     return 0;
