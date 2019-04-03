@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
@@ -5,7 +6,6 @@
 #include <signal.h>
 
 int wait = 0;
-
 void stop_signal(int sig_num) {
     if(wait == 0) {
         printf("\nOdebrano sygnał %d \nOczekuję na CTRL+Z - kontynuacja albo CTR+C - zakonczenie programu\n", sig_num);

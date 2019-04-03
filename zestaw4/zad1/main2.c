@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
@@ -6,6 +7,7 @@
 
 int wait = 0;
 int alive_process = 1;
+int pid;
 
 void stop_signal(int sig_num) {
     if(wait == 0) {
@@ -37,7 +39,7 @@ int main(int argc, char** argv) {
       signal(SIGINT, int_signal);
       if(!wait){
         if(!alive_process){
-          alive_process == 0;
+          alive_process = 1;
 
           pid = fork();
           if(pid == 0){
@@ -45,7 +47,9 @@ int main(int argc, char** argv) {
             exit(0);
           }
         }
-        }
-      }
+    }else if(alive_process){
+      alive_process = 0;
+      kill(pid, SIGINT);
     }
+  }
 }
