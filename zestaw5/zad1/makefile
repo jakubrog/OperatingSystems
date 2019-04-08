@@ -6,10 +6,10 @@ compile:
 
 
 clean:
-	rm -rf main commands
+	rm -rf main
 
 tests:
 	touch commands
-	echo "ls -al | grep jakubrog | grep makefile" >> commands
-
+	echo "ls -al | grep Apr | tr a-z A-Z | grep MAKEFILE" >> commands
 	./main commands
+	rm commands

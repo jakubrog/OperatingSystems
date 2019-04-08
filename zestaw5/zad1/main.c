@@ -9,8 +9,6 @@
 #define LINES_MAX 1000
 #define COMANDS_MAX 100
 
-
-char *trim(char *string_to_trim);
 char **parse_arguments(char *line);
 int line_exec(char *command);
 
@@ -29,57 +27,18 @@ int main(int argc, char **argv) {
     }
 
     char command[LINES_MAX];
-
-    while (fgets(command, LINES_MAX, fp)) {    // read one line from file to temp_registry, of max size LINES_MAX
-        pid_t pid = fork();
-
+    pid_t pid;
+    while (fgets(command, LINES_MAX, fp) != NULL) {    // read one line from file to temp_registry, of max size LINES_MAX
+        pid = fork ();
         if (pid == 0) {
-            line_exec(command);   // every line is executed by different process
+            line_exec(command); // every line is executed by different process
             exit(0);
+        }else{
+          wait(NULL);
         }
-
-        wait(NULL);
     }
     fclose(fp);
     return 0;
-}
-
-
-char *trim(char *string_to_trim) {
-    if (string_to_trim == NULL)
-        return NULL;
-
-    char *buffer = malloc(sizeof(char) * (strlen(string_to_trim) + 1));
-    char *tmp = string_to_trim;
-    int i = 0, j = 0;
-
-//skip backspaces on beginning
-    while (tmp[i] == ' ')
-        i++;
-
-
-    while (tmp[i] != '\0') {
-
-//load text to buffer
-        while ((tmp[i] != ' ') && (tmp[i] != '\0'))
-            buffer[j++] = tmp[i++];
-
-
-
-//change multiple spaces into one
-        if (tmp[i] == ' ') {
-            while (tmp[i] == ' ')
-                i++;
-
-            if (tmp[i] != '\0')
-                buffer[j++] = ' ';
-        }
-    }
-
-    buffer[j + 1] = '\0';
-
-    return buffer;
-
 }
 
 // given result[0] is program to launch and the rest are arguments
@@ -127,7 +86,7 @@ int line_exec(char *command) {
 
     while (commands[command_number] != NULL) {
         command_number++;
-        commands[command_number] = trim(strtok(NULL, "|"));
+        commands[command_number] = strtok(NULL, "|");
     };
 
     int i;
@@ -148,9 +107,7 @@ int line_exec(char *command) {
         if (pid == 0) {
 
             char **exec_params = parse_arguments(commands[i]);
-            /// make STDOUT_FILENO connect to what pipes[(i + 1) % 2][0] is connected
-            ///if its last command so make its, it means output
-            //podmiana wyjscia standardowego na wyjscie
+
             if (i != command_number - 1) {
                 close(pipes[i % 2][0]);
                 if (dup2(pipes[i % 2][1], STDOUT_FILENO) < 0) {
@@ -159,9 +116,6 @@ int line_exec(char *command) {
             }
 
             if (i != 0) {
-                /// make STDIN_FILENO conect to what pipes[(i + 1) % 2][0]
-                // it means input
-                //podmiana wejscia standardowego na potok
                 close(pipes[(i + 1) % 2][1]);
                 if (dup2(pipes[(i + 1) % 2][0], STDIN_FILENO) < 0) {
                     exit(5);
