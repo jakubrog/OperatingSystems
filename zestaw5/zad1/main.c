@@ -46,7 +46,7 @@ char **parse_arguments(char *line) {
     int size = 0;
     char **args = NULL;
 
-    char delimiters[3] = {' ', '\n', '\t'};
+    char delimiters[3] = {' ', '\n'};
     char *a = strtok(line, delimiters);
 
     while (a != NULL) {
