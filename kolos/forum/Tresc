@@ -1,0 +1,48 @@
+Wtorek 9:35 Kurdziel
+1. Podłączyć bibliotekę dzielona dynamicznie i zwrócić funkcje z daną nazwą
+2. była funkcja przyjmująca deskryptory, trzeba było zrobić childa i parenta w jednym przekierować STDIN na pierwszy deskryptor i go zamknąć, w drugim analogicznie, i pozwracać wartość forka() (0 i pid childa)
+	3. Ustawić przechwytywanie sygnału i dodatkowo blokować inny sygnał 
+
+====
+Wtorek 14:40 Siwik
+
+	1. Ojciec wysyła dany sygnał wraz wartością z argv[2]
+	Dziecko blokuje wszystkie sygnały oprócz SIGUSR1, oraz wypisuje wiadaomość którą dostał wraz z sygnałem.
+	sigqueue, siginfo itp.
+	2. Obustronna komunikacja między dwoma procesami za pomocą 2 pipeów
+	3. Najłatwiesze, w ojcu znajduję się pętla która ma produkować n dzieci, każde dziecko ma mieć tego samego ojca, oraz wypisać, którym jest dzieckiem, swój pid, pid ojca.
+
+
+===
+grupa K. Rudka - środa 8:00:
+
+1. zaalokuj pamięć dla tablicy dwuwymiarowej i potem ją zwolnij
+2. otwórz plik podany jako argument i skopiuj jego zawartość do pliku podanego jako drugi argument
+	3. obsłuż sygnał SIGINT przy użyciu SIGACTION
+
+====
+Grupa EOM - środa 9:35:
+
+	1. Wypisz zawartość katalogu do którego ścieżkę przekazano w argumencie programu. Należy pomiąć wypisanie . oraz .. 
+	2. W rodzicu należy sprawdzić status dziecka w sposób nieblokujący.Następnie w zależności od statusu należy wykonać kolejne kroki polegające m.in. na wysłaniu sygnału do dziecka oraz czekaniu blokującym.
+	3. Zamknij końcówkę potoku nienazwanego do pisania.Przekieruj standardowe wejście na wejście potoku nienazwanego . Wykonaj polecenie "tr [a-z] [A-Z]"
+
+====
+Koźlak - środa 9:35
+
+1. Program wypisujący czasy wykonania programów podanych jako kolejne argumenty, powinien wypisać czas rzeczywisty, użytkownika i systemowy. (W dwóch miejscach trzeba było wywołać times() z podanym argumentem)
+
+2. Program identyfikuje typy plików podane jako argumenty, rozpoznaje zwykle pliki, katalogi oraz linki symboliczne. Należy uzupełnić program w oznaczonych wierszach rozpoznając odpowiednie rodzaje plików. (Trzy razy wywołać makro do sprawdzanie typu pliku z <podany argument>.st_mode
+
+
+============
+Siwik - środa 14:40
+
+1. Otwórz proces potomny i w nim wywołaj lokalny program "./calc" z argumentami <operand> <operacja> <operand> otrzymanymi jako odpowiednio argv[1], argv[2],argv[3]. Użyj tablicowego przekazywania argumentów.
+(w katalogu z zadaniem był plik wykonywalny program"calc").
+
+2. Dostajesz pliki sender.c i receiver.c. Sender powinien utworzyć nazwany potok (jest już podany #define z nazwą), wpisać do niej pierwszy argumtn programu jako int "i posprzątać" (zrozumialem to jako zamknięcie i usunięcie pipe'y).
+Receiver powinien otworzyć ten sam potok, odczytać przekazaną liczbę i wypisać (printf był już w kodzie, wystarczyło wczytać wartość do zadanej zmiennej).
+
+	3. Pojedynczy plik main.c z forkiem. W procesie dziecka zablokuj wszystkie sygnały oprócz SIGUSR1 i zdefiniuj handler tak, aby proces dzieka wypisywał wartość liczbową otrzymaną wraz z sygnałem SIGUSR1 (chodzi o sigqueue/sigaction).
+	W procesie rodzica wyślij do dziecka sygnał o numerze otrzymanym w argv[2] dodając od niego komunikat (liczbę) otrzymana w argv[1].
