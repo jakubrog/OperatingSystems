@@ -114,7 +114,8 @@ void init_mesg(){
   id = mesg.id; // id given by server
 
   printf("I am registered as %d client\n",id );
-  fflush(stdout); // clear output buffer
+  fflush(stdout);
+  fflush(stdin); // clear output buffer
 }
 
 void exit_handle(){
@@ -127,10 +128,10 @@ void parent_read(){
     atexit(exit_function_parent); // set normal process termination
 
     // create new queue or open existing one, the same as server
-    set_up_server_queue_id();
+   set_up_server_queue_id();
     // create private queue
-    set_up_own_queue();
-    init_mesg();
+   set_up_own_queue();
+   init_mesg();
 
     while (1) {
         if(read(p[0], buff, SIZE) > 0){
@@ -139,9 +140,6 @@ void parent_read(){
             char * token = strtok_r(the_rest,delimiters, &the_rest);
             mesg.id = id; // id given by server
 
-            for(int i = 0 ; i < strlen(token); i++)
-              printf("%c\n",token[i] );
-            printf("%s\n", token );
 /************************************/
 /*** READ INPUT AND SEND MESSAGE *///
 
@@ -170,7 +168,7 @@ void parent_read(){
             }else if(strcmp(token,"DEL")==0){
               if(strcmp(the_rest,"\0") == 0 ||strcmp(the_rest,"\n") == 0   ){
                 printf("Not enough arguments\n");
-                fflush(stdout);
+
               }else{
                 mesg.type = DEL;
                 strcpy(mesg.mesg_text,the_rest);
@@ -204,6 +202,7 @@ void parent_read(){
               printf("Wrong command\n");
               fflush(stdout);
             }
+
           }
 
 /************************************/
@@ -251,12 +250,15 @@ void parent_read(){
 void child_write()
 {
     close(p[0]);
-    atexit(exit_function_child); // set normal process termination
+    atexit(exit_function_child);
     while(1){
-        fgets(buff,SIZE, stdin); // read SIZE-1 chars from standard input
+        fgets(buff,SIZE,stdin);
 
-        if(buff[0]!='\n')
-           write(p[1], buff, SIZE);
+         char * ptr = strdup(buff);
+
+          if(buff[0]!='\n'){
+            write(p[1], ptr, SIZE);
+          }
 
     }
 }
@@ -265,6 +267,7 @@ int main(int argc, char** argv){
 
   // There has to be pipe, becouse fgets is blocking function and there will
   // be problems to receiving messages
+  setbuf(stdout, NULL);
   if (pipe(p) < 0)
       exit(1);
 

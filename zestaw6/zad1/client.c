@@ -241,15 +241,15 @@ void parent_read(){
 
 void child_write()
 {
-
     close(p[0]);
     atexit(exit_function_child); // set normal process termination
     while(1){
-         fgets(buff,SIZE, stdin); // read SIZE-1 chars from standard input
+      char * ptr = strdup(buff);
 
-        if(buff[0]!='\n')
-          write(p[1], buff, SIZE);
-
+      fgets(buff, SIZE, stdin); // read SIZE chars from standard input
+      if(buff[0]!='\n'){
+          write(p[1], ptr, SIZE);
+         }
     }
 }
 
