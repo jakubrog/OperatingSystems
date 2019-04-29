@@ -1,6 +1,10 @@
-CC=gcc
-CFLAGS=-Wall -std=gnu99
+CC = gcc
+FLAGS = -Wall -std=gnu99 -ggdb
 
 
-server: server.c
-	$(CC) -o server $(CFLAGS) server.c
+compile:
+	$(CC) $(FLAGS) server.c -o server
+	$(CC) $(FLAGS) client.c -o client
+
+clean:
+	rm -f server client *.o

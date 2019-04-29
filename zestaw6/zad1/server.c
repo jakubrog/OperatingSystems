@@ -1,173 +1,361 @@
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
+#include <sys/types.h>
 #include <sys/ipc.h>
-#include <sys/msg.h>
-#include <ctype.h>
-#include <time.h>
 #include <signal.h>
+#include <limits.h>
+#include <sys/msg.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <time.h>
+#include <pwd.h>
+#include <string.h>
 
-#include "common.h"
+#include "headers.h"
 
-void handle(struct message *msg);
+#define CLIENT_NO 30
 
-void echo(struct message *msg);
-void list(struct message *msg);
-void to_friends(struct message *msg);
-void all(struct message *msg);
-void friends(struct message *msg);
-void one(struct message *msg);
-void stop(struct message *msg);
-int find_client(pid_t sender_pid);
-int create_message(struct message *msg);
-char *getTime();
+// one static message for whole program, easier to use in funcitions and there is no need for more
+static struct mesg_buffer mesg;
+static int queue_id = -1;
 
-int clients[MAX_CLIENTS][2];
-int client_count = 0;
-int queue_id;
-int active = 1;
+static int friends[CLIENT_NO][CLIENT_NO]; // every firend can have a list with friends
 
-/// TODO: LOGIN TAK PRZEROBIC ZEBY DZIALAL JAKO LADOWANIE ZNJOMYCH, DOROBIC WSZYSTKIE FUNKCJE. DODAC OBSLUGE SIGINT
-
-
-
-int main(){
-  struct msqid_ds current_state;
-
-  char* path = getenv("HOME"); //get home path in path
-  if(!path)
-    return 1;
-
-  key_t publicKey = ftok(path, PROJECT_ID); // generate key value
-  if(!publicKey)
-    return 2;
-
-  queue_id = msgget(publicKey,IPC_CREAT | IPC_EXCL | 0666); //what are these flags
-  if(queue_id != 0)
-    return 3;
-
-  message msg;
-  while(1){
-      if(active == 0){
-        //msgctl - function provide message control operations as specified by IPC_STAT - Place the current value of each member of the msqid_ds data structure associated with msqid into the structure pointed to by buf.
-          if(msgctl(queue_id, IPC_STAT, &current_state) != 0)
-              return 4;
-          if (current_state.msg_qnum == 0) // if queue is empty
-              break;
+// arraty with clients, where every client has its own id. Under this id in array there is queue_id
+static int client_list[CLIENT_NO];
 
 
-//int msgrcv(int msgqid, struct msgbuf *msgp, int msgsz,long type, int msgflg) -6 means the first message of the lowest type that is less than or equal to the absolute value of msgtyp shall be received.
-          if (msgrcv(queue_id, &msg, MSG_SIZE, -6, 0) < 0)
-              return 5;
-          handle(&msg);
-      }
+/**************************
+MESSAGE HANDLERS
+**************************/
+
+// normal process termination
+void exit_function(){
+  struct mesg_buffer exit_message;
+  exit_message.priority = STOP_PRIOR;
+  exit_message.type = STOP;
+
+  for(int i = 0 ; i < CLIENT_NO ; ++i){
+    if(client_list[i]!= -1){
+      msgsnd(client_list[i],&exit_message,mesg_size(),0);
+    }
   }
-  return 0;
+
+    if(queue_id != -1) // if queue exists
+      msgctl(queue_id, IPC_RMID, NULL); // controll queue with queue_id, IPC_RMID - immidiately remove the message queue
+}
+
+// remove client friend list
+void delete_client_friends_list(int client_id){
+  if(client_id >= 0 && client_id < CLIENT_NO)
+    for(int i = 0 ; i < CLIENT_NO ; i++)
+      friends[client_id][i] = 0;
 }
 
 
-void handle(struct message *msg){
-  if (msg == NULL)
-      return;
-  switch(msg->mtype){
-      case LOGIN:
+void print_friend_list(int client_id){
+  printf("CLIENT FRIENDS: %d\n",client_id );
 
-          break;
-      case ECHO:
-
-          break;
-      case LIST:
-
-          break;
-      case TOFRIENDS:
-
-          break;
-      case ALL:
-
-          break;
-      case FRIENDS:
-
-          break;
-      case ONE:
-
-          break;
-      case STOP:
-
-          break;
-      default:
-          break;
-      }
-}
-
-void login(message *msg){
-    key_t client;
-    if(sscanf(msg->message_text, "%d", &client)) //read formated data from string
-        exit(6);
-
-    int client_queue_id = msgget(client, 0);
-    int client_pid = msg->sender_pid;
-
-    msg->mtype = 0;
-    msg->sender_pid = getpid();
-
-    if(client_count > MAX_CLIENTS - 1)
-        exit(7);
-
-    else{
-      clients[client_count][0] = client_pid;
-      clients[client_count++][1] = client_queue_id;
-      sprintf(msg->message_text, "%d", client_count - 1);
+  for(int i = 0 ; i < CLIENT_NO ; ++i){
+    if(friends[client_id][i]==1)
+      printf("%d ",i);
     }
 
-    if(msgsnd(client_queue_id, msg, MSG_SIZE, 0) == -1)
-        exit(8);
+    printf("\n");
 }
 
-void echo(message *msg){
-    int client_id =  create_message(msg);
-    if(client_id == -1)
-        exit(9);
-    char *reply = strcat(msg->message_text, getTime());
-    strcpy(msg->message_text, reply);
+// funciton creates char array with clients list
+void list_clients(){
+  char list[MESSAGE_SIZE];
+  list[0] = '\0';
+  char buff[14];
 
-    if(msgsnd(client_id, msg, MSG_SIZE, 0) == -1)
-        exit(1);
-}
-
-int create_message(struct message *msg) {
-    int client_id = find_client(msg->sender_pid);
-    if (client_id == -1){
-        printf("server: client not found\n");
-        return -1;
+  for(int i = 0 ; i < CLIENT_NO; ++i)
+    if(client_list[i] != -1){
+      sprintf(buff,"%d ",i);
+      strcat(list,buff);
     }
 
-    msg->mtype = msg->sender_pid;
-    msg->sender_pid = getpid();
-
-    return client_id;
+  strcpy(mesg.mesg_text,list);
 }
 
-int find_client(pid_t sender_pid){
-  for (int i=0; i < MAX_CLIENTS; ++i) {
-      if(clients[i][0] == sender_pid)
-          return clients[i][1];
+/// simple funcition to send message to client
+void send_message_to_client(int client_id){
+  if(client_id < CLIENT_NO && client_list[client_id] != -1){
+    printf("Message sent to: %d \n\n",client_list[client_id]);
+    msgsnd(client_list[client_id], &mesg, mesg_size(), 0);
   }
+}
+
+// simple function to add client
+int add_client(int queue_id){
+  for( int i = 0 ; i < CLIENT_NO ; ++i)
+    if(client_list[i] == -1){
+      client_list[i]=queue_id;
+      return i;
+    }
+
   return -1;
 }
 
-char *getTime(){
-    time_t current_time;
-    struct tm * time_info;
-    char *timeString = malloc(sizeof(char) * 30);  // space for "HH:MM:SS\0"
+// Adding or deleting friends of given client, argumet mode declares adding
+// or deleting mode of fucntion, if mode equals 'a' functions is adding to
+// friends list, if mode equals 'd' funciton is deleting from friends list,
+// otherwise function does nothing
+void friend_list_handle(int client_id, char* str, char mode){
+  char * ptr = str;
+  char * token = strtok_r(ptr," ",&ptr);
 
-    time(&current_time);
-    time_info = localtime(&current_time);
+  while(ptr!=NULL && token!=NULL ){
+    if(strcmp(token,"\0")!= 0 && strcmp(token,"\n") != 0){
+      int index = strtol(token,NULL,10); // load new friend id to index
 
-    strftime(timeString, 20, "%b %d %H:%M", time_info);
-    return timeString;
+      if(index >=0 && index < CLIENT_NO){
+        if(mode == 'a')
+          friends[client_id][index] = 1;
+        if(mode == 'd')
+          friends[client_id][index] = 0;
+        }
+    }
+    token = strtok_r(ptr," ",&ptr); // move to next number
+  }
+}
+
+// adding client to queue
+void init_handle(){
+  int client_id;
+
+  if( (client_id = add_client(mesg.id)) == -1){
+    printf("Cannot initialize client\n");
+  }
+
+  printf("Client no %d has been initialized\n", client_id);
+  mesg.type = INIT;
+  mesg.priority= INIT_PRIOR;
+  mesg.id = client_id;
+  send_message_to_client(client_id);
+}
+
+void list_handle(){
+  int client_id = mesg.id;
+  printf("LIST from: %d\n",mesg.id);
+  list_clients();
+  mesg.type = LIST;
+  mesg.priority = LIST_PRIOR;
+  send_message_to_client(client_id);
+}
+
+// funciton send message with string, current time and sender id to all active clients
+void all2_handle(){
+  char buff[100];
+  char buff2[20];
+
+  printf("2ALL from: %d\n",mesg.id);
+  sprintf(buff2,"Sender: %d\t", mesg.id);
+
+  time_t curr_time;
+  time(&curr_time);
+
+  strftime(buff, 100, "%Y-%m-%d_%H-%M-%S ", localtime(&curr_time));
+
+  strcat(buff,buff2);
+  strcat(buff,mesg.mesg_text);
+  strcpy(mesg.mesg_text,buff);
+
+  for(int i = 0 ; i < CLIENT_NO ; i++)
+    if(client_list[i]!= -1)
+      send_message_to_client(i);
+
+}
+
+// the same funcions as all2_handle but message is send only for friends of given client
+void friends2_handle(){
+  char buff[100];
+  char buff2[30];
+
+  printf("2FRIENDS from: %d\n",mesg.id);
+
+
+  time_t curr_time;
+  time(&curr_time);
+
+  strftime(buff, 100, "%Y-%m-%d_%H-%M-%S ", localtime(&curr_time));
+
+  strcat(buff,buff2);
+  strcat(buff,mesg.mesg_text);
+  strcpy(mesg.mesg_text,buff);
+  for(int i = 0 ; i < CLIENT_NO ; i++)
+    if(friends[mesg.id][i])
+      send_message_to_client(i);
+}
+
+// function for sending message to client with given id
+void one2_handle(){
+  char buff[100];
+  char buff2[30];
+  time_t curr_time;
+  time(&curr_time);
+
+  printf("2ONE from: %d\n",mesg.id);
+  strftime(buff, 100, "%Y-%m-%d_%H-%M-%S ", localtime(&curr_time));
+
+  sprintf(buff2,"Sender: %d\t", mesg.id);
+  char* ptr = mesg.mesg_text;
+  char* client = strtok_r(ptr," ",&ptr); // set delimeter
+
+  int client_id = strtol(client,NULL,10); // read client id
+  strcat(buff,buff2);
+  strcat(buff,ptr);
+  strcpy(mesg.mesg_text,buff);
+
+  send_message_to_client(client_id);
+}
+
+
+void add_handle(){
+  printf("ADD from: %d\n",mesg.id);
+  friend_list_handle(mesg.id,mesg.mesg_text, 'a');
+  print_friend_list(mesg.id);
+}
+
+void del_handle(){
+  printf("DELETE from: %d\n",mesg.id);
+  friend_list_handle(mesg.id,mesg.mesg_text, 'd');
+  print_friend_list(mesg.id);
+}
+
+void stop_handle(){
+  printf("STOP from: %d\n",mesg.id);
+  delete_client_friends_list(mesg.id);
+  client_list[mesg.id]=-1;
+}
+
+void echo_handle(){
+  char buff[100];
+  time_t curr_time;
+  time(&curr_time);
+
+  printf("ECHO from: %d\n",mesg.id);
+  strftime(buff, 100, "%Y-%m-%d_%H-%M-%S ", localtime(&curr_time));
+
+  strcat(buff, mesg.mesg_text); // add message text to buff
+  strcpy(mesg.mesg_text, buff); // copy buff to message text
+  send_message_to_client(mesg.id); // send message
+}
+
+
+
+
+void friends_handle(){
+  delete_client_friends_list(mesg.id); // clear existing list
+
+  if(mesg.mesg_text[0] != '\0'){ // if command friends had arguments
+    friend_list_handle(mesg.id, mesg.mesg_text, 'a');
+  }
+  print_friend_list(mesg.id);
+}
+
+
+void check_client_list(){
+  for( int i = 0 ; i < CLIENT_NO ; ++i)
+    printf("%d %d\n",i,client_list[i] );
+}
+
+/**************************
+INITIALIZE AND EXIT FUNCTIONS
+**************************/
+
+void set_up_client_list(){
+  for( int i = 0 ; i < CLIENT_NO ; ++i){
+    client_list[i]= -1;
+
+    for(int j = 0 ; j < CLIENT_NO ; ++j)
+      friends[i][j]=0;
+  }
+}
+
+
+void set_up_server_queue_id(){
+  const char *homedir;
+
+  // getuid to get the user id of the current user and then getpwuid to get the password entry (which includes the home directory) of that user:
+
+  if ((homedir = getenv("HOME")) == NULL) {
+      homedir = getpwuid(getuid())->pw_dir;
+  }
+  printf("%s\n", homedir);
+  key_t key_own= ftok(homedir, SERVER_SEED);
+
+  if(( queue_id = msgget(key_own, 0777 | IPC_CREAT )) == -1 ){ // get access or create message queu, IPC_CREAT to create queue if doesnt exist
+    printf("Cannot create or open queue\n" );
+    exit(-1);
+  }
+}
+
+void sigint_handler(){
+  exit(0);
+}
+//////////////////////////
+
+
+int main(int argc, char** argv){
+
+  srand(time(NULL));
+
+  signal(SIGINT, sigint_handler);
+  atexit(exit_function);  // normal process termination
+
+  set_up_client_list(); // initialize array with clients and friends
+  set_up_server_queue_id(); // create queue
+
+  while(1){
+    if(msgrcv(queue_id, &mesg, mesg_size() ,0,IPC_NOWAIT) != -1){
+      switch (mesg.type) {
+        case INIT:
+          init_handle();
+          break;
+
+        case LIST:
+          list_handle();
+          break;
+
+        case ECHO:
+          echo_handle();
+          break;
+
+        case ALL2:
+          all2_handle();
+          break;
+
+        case FRIENDS2:
+          friends2_handle();
+          break;
+
+        case ONE2:
+          one2_handle();
+          break;
+
+        case FRIENDS:
+          friends_handle();
+          break;
+
+        case STOP:
+          stop_handle();
+          break;
+
+        case ADD:
+          add_handle();
+          break;
+
+        case DEL:
+          del_handle();
+          break;
+
+        default:
+          break;
+        }
+      }
+    }
+
+  return 0;
 }
