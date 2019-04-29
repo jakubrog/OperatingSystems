@@ -127,6 +127,7 @@ void init_handle(){
 
   if( (client_id = add_client(mesg.id)) == -1){
     printf("Cannot initialize client\n");
+    return;
   }
 
   printf("Client no %d has been initialized\n", client_id);
