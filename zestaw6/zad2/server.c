@@ -21,16 +21,16 @@
 
 #include "headers.h"
 
-#define CLIENT_NO 30
+#define MAX_CLIENTS 30
 
 // one static message for whole program, easier to use in funcitions and there is no need for more
 static struct mesg_buffer mesg;
 static mqd_t queue_id = -1;
 
-static int friends[CLIENT_NO][CLIENT_NO]; // every firend can have a list with friends
+static int friends[MAX_CLIENTS][MAX_CLIENTS]; // every firend can have a list with friends
 
 // arraty with clients, where every client has its own id. Under this id in array there is queue descriptor
-static mqd_t client_list[CLIENT_NO];
+static mqd_t client_list[MAX_CLIENTS];
 
 
 /**************************
@@ -42,7 +42,7 @@ void exit_function(){
   struct mesg_buffer exit_message;
   exit_message.type = STOP;
 
-  for(int i = 0 ; i < CLIENT_NO ; i++){
+  for(int i = 0 ; i < MAX_CLIENTS ; i++){
     if(client_list[i] != -1){
       mq_send(client_list[i], (const char*)&exit_message, sizeof(mesg), STOP_PRIOR);
     }
@@ -55,22 +55,23 @@ void exit_function(){
 }
 
 // remove client friend list
-void delete_client_friends_list(int client_id){
-  if(client_id >= 0 && client_id < CLIENT_NO)
-    for(int i = 0 ; i < CLIENT_NO ; i++)
+void clear_friends_list(int client_id){
+  if(client_id >= 0 && client_id < MAX_CLIENTS)
+    for(int i = 0 ; i < MAX_CLIENTS ; i++)
       friends[client_id][i] = 0;
 }
 
 
-void print_friend_list(int client_id){
+void print_friends(int client_id){
   printf("CLIENT FRIENDS: %d\n",client_id );
-
-  for(int i = 0 ; i < CLIENT_NO ; ++i){
-    if(friends[client_id][i]==1)
-      printf("%d ",i);
+  int index = 1;
+  for(int i = 0 ; i < MAX_CLIENTS ; ++i){
+      if(friends[client_id][i]==1){
+        printf("%d. %d\n",index, i);
+        index++;
+      }
     }
 
-    printf("\n");
 }
 
 // funciton creates char array with clients list
@@ -78,19 +79,20 @@ void list_clients(){
   char list[MESSAGE_SIZE];
   list[0] = '\0';
   char buff[14];
-
-  for(int i = 0 ; i < CLIENT_NO; ++i)
+  int index = 0;
+  for(int i = 0 ; i < MAX_CLIENTS; ++i)
     if(client_list[i] != -1){
-      sprintf(buff,"%d ",i);
+      sprintf(buff,"%d. %d\n",index, i);
       strcat(list,buff);
+      index++;
     }
 
   strcpy(mesg.mesg_text,list);
 }
 
 /// simple funcition to send message to client
-void send_message_to_client(int client_id, int priority){
-  if(client_id < CLIENT_NO && client_list[client_id] != -1){
+void send_message(int client_id, int priority){
+  if(client_id < MAX_CLIENTS && client_list[client_id] != -1){
     printf("Message sent to: %d \n\n", (int)client_list[client_id]);
 
 //int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio);
@@ -100,7 +102,7 @@ void send_message_to_client(int client_id, int priority){
 
 // simple function to add client
 int add_client(mqd_t queue_id){
-  for( int i = 0 ; i < CLIENT_NO ; ++i)
+  for( int i = 0 ; i < MAX_CLIENTS ; ++i)
     if(client_list[i] == (mqd_t)(-1)){
       client_list[i] = queue_id;
       return i;
@@ -113,7 +115,7 @@ int add_client(mqd_t queue_id){
 // or deleting mode of fucntion, if mode equals 'a' functions is adding to
 // friends list, if mode equals 'd' funciton is deleting from friends list,
 // otherwise function does nothing
-void friend_list_handle(int client_id, char* str, char mode){
+void add_or_remove_friend(int client_id, char* str, char mode){
   char * ptr = str;
   char * token = strtok_r(ptr," ",&ptr);
 
@@ -121,7 +123,7 @@ void friend_list_handle(int client_id, char* str, char mode){
     if(strcmp(token,"\0")!= 0 && strcmp(token,"\n") != 0){
       int index = strtol(token,NULL,10); // load new friend id to index
 
-      if(index >=0 && index < CLIENT_NO){
+      if(index >=0 && index < MAX_CLIENTS){
         if(mode == 'a')
           friends[client_id][index] = 1;
         if(mode == 'd')
@@ -149,7 +151,7 @@ void init_handle(){
   printf("Client no %d has been initialized\n", client_id);
   mesg.type = INIT;
   mesg.id = client_id;
-  send_message_to_client(client_id, INIT_PRIOR);
+  send_message(client_id, INIT_PRIOR);
 }
 
 void list_handle(){
@@ -157,7 +159,7 @@ void list_handle(){
   printf("LIST from: %d\n",mesg.id);
   list_clients();
   mesg.type = LIST; /// need here?
-  send_message_to_client(client_id, LIST_PRIOR);
+  send_message(client_id, LIST_PRIOR);
 }
 
 // funciton send message with string, current time and sender id to all active clients
@@ -177,9 +179,9 @@ void all2_handle(){
   strcat(buff,mesg.mesg_text);
   strcpy(mesg.mesg_text,buff);
 
-  for(int i = 0 ; i < CLIENT_NO ; i++)
+  for(int i = 0 ; i < MAX_CLIENTS ; i++)
     if(client_list[i]!= (mqd_t)(-1))
-      send_message_to_client(i, ALL2_PRIOR);
+      send_message(i, ALL2_PRIOR);
 
 }
 
@@ -201,9 +203,9 @@ void friends2_handle(){
   strcat(buff,mesg.mesg_text);
   strcpy(mesg.mesg_text,buff);
 
-  for(int i = 0 ; i < CLIENT_NO ; i++)
+  for(int i = 0 ; i < MAX_CLIENTS ; i++)
     if(friends[mesg.id][i])
-      send_message_to_client(i, FRIENDS2_PRIOR);
+      send_message(i, FRIENDS2_PRIOR);
 }
 
 // function for sending message to client with given id
@@ -225,27 +227,27 @@ void one2_handle(){
   strcat(buff,ptr);
   strcpy(mesg.mesg_text,buff);
 
-  send_message_to_client(client_id, ONE2_PRIOR);
+  send_message(client_id, ONE2_PRIOR);
 }
 
 
 void add_handle(){
   printf("ADD from: %d\n",mesg.id);
-  friend_list_handle(mesg.id,mesg.mesg_text, 'a');
-  print_friend_list(mesg.id);
+  add_or_remove_friend(mesg.id,mesg.mesg_text, 'a');
+  print_friends(mesg.id);
 }
 
 void del_handle(){
   printf("DELETE from: %d\n",mesg.id);
-  friend_list_handle(mesg.id,mesg.mesg_text, 'd');
-  print_friend_list(mesg.id);
+  add_or_remove_friend(mesg.id,mesg.mesg_text, 'd');
+  print_friends(mesg.id);
 }
 
 void stop_handle(){
   printf("STOP from: %d\n",mesg.id);
 
   // delete client friends
-  delete_client_friends_list(mesg.id);
+  clear_friends_list(mesg.id);
 
   // close client queue
   mq_close(client_list[mesg.id]);
@@ -263,24 +265,24 @@ void echo_handle(){
 
   strcat(buff, mesg.mesg_text); // add message text to buff
   strcpy(mesg.mesg_text, buff); // copy buff to message text
-  send_message_to_client(mesg.id, ECHO_PRIOR); // send message
+  send_message(mesg.id, ECHO_PRIOR); // send message
 }
 
 
 
 
 void friends_handle(){
-  delete_client_friends_list(mesg.id); // clear existing list
+  clear_friends_list(mesg.id); // clear existing list
 
   if(mesg.mesg_text[0] != '\0'){ // if command friends had arguments
-    friend_list_handle(mesg.id, mesg.mesg_text, 'a');
+    add_or_remove_friend(mesg.id, mesg.mesg_text, 'a');
   }
-  print_friend_list(mesg.id);
+  print_friends(mesg.id);
 }
 
 
 void check_client_list(){
-  for( int i = 0 ; i < CLIENT_NO ; ++i)
+  for( int i = 0 ; i < MAX_CLIENTS ; ++i)
     printf("%d %d\n",i,client_list[i] );
 }
 
@@ -289,10 +291,10 @@ INITIALIZE AND EXIT FUNCTIONS
 **************************/
 
 void set_up_client_list(){
-  for( int i = 0 ; i < CLIENT_NO ; i++){
+  for( int i = 0 ; i < MAX_CLIENTS ; i++){
     client_list[i]= (mqd_t)(-1); // cast -1 to sqd_t
 
-    for(int j = 0 ; j < CLIENT_NO ; j++)
+    for(int j = 0 ; j < MAX_CLIENTS ; j++)
       friends[i][j]=0;
   }
 }

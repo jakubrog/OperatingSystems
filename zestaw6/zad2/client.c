@@ -212,7 +212,7 @@ void parent_read(){
         if(mq_receive(queue_id,(char*)&mesg,sizeof(mesg), NULL) != -1 ){
           switch(mesg.type){
             case LIST :
-              printf("LIST: %s\n",mesg.mesg_text);
+              printf("LIST: \n%s\n",mesg.mesg_text);
               fflush(stdout);
               break;
 
