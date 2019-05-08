@@ -46,7 +46,7 @@ char **parse_arguments(char *line) {
     int size = 0;
     char **args = NULL;
 
-    char delimiters[3] = {' ', '\n'};
+    char delimiters[3] = {' ', '\n', '\t'};
     char *a = strtok(line, delimiters);
 
     while (a != NULL) {
@@ -78,7 +78,7 @@ int line_exec(char *command) {
 
     int command_number = 0;
 
-    int pipes[2][2]; // only two is ok b
+    // int pipes[2][2]; // only two is ok b
     char *commands[COMANDS_MAX];  // array keeps commands between pipes, commands separated with pipe are located in
     // different blocks ex. ls | grep a => commands[0]= "ls " , commands[1] = " grep a"
 
@@ -88,13 +88,13 @@ int line_exec(char *command) {
         command_number++;
         commands[command_number] = strtok(NULL, "|");
     };
-
+    int pipes[command_number+1][2];
     int i;
     for (i = 0; i < command_number; i++) {
 
         if (i != 0) {
-            close(pipes[i % 2][0]);  // if it's not first loop close descriptors used before
-            close(pipes[i % 2][1]);
+            close(pipes[i-1][0]);  // if it's not first loop close descriptors used before
+            close(pipes[i-1][1]);
         }
 
         if (pipe(pipes[i % 2]) == -1) {
@@ -109,15 +109,15 @@ int line_exec(char *command) {
             char **exec_params = parse_arguments(commands[i]);
 
             if (i != command_number - 1) {
-                close(pipes[i % 2][0]);
-                if (dup2(pipes[i % 2][1], STDOUT_FILENO) < 0) {
+                close(pipes[i][0]);
+                if (dup2(pipes[i][1], STDOUT_FILENO) < 0) {
                     exit(4);
                 }
             }
 
             if (i != 0) {
-                close(pipes[(i + 1) % 2][1]);
-                if (dup2(pipes[(i + 1) % 2][0], STDIN_FILENO) < 0) {
+                close(pipes[(i + 1)][1]);
+                if (dup2(pipes[(i + 1)][0], STDIN_FILENO) < 0) {
                     exit(5);
                 }
 
@@ -128,8 +128,8 @@ int line_exec(char *command) {
         }
     }
 
-    close(pipes[command_number % 2][0]);
-    close(pipes[command_number % 2][1]);
+    close(pipes[command_number][0]);
+    close(pipes[command_number][1]);
     wait(NULL);
     exit(0);
 }

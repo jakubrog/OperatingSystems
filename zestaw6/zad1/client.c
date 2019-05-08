@@ -244,11 +244,9 @@ void child_write()
     close(p[0]);
     atexit(exit_function_child); // set normal process termination
     while(1){
-      char * ptr = strdup(buff);
-
       fgets(buff, SIZE, stdin); // read SIZE chars from standard input
       if(buff[0]!='\n'){
-          write(p[1], ptr, SIZE);
+          write(p[1], buff, SIZE);
          }
     }
 }
