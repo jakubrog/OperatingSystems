@@ -10,7 +10,7 @@ int truckMaxLoad, queue_elements, max_weight;
 int occupiedSpace;
 int shm_id = -2;
 int semaphoreId = -2;
-struct belt_queue *conveyorBelt;
+struct belt_queue *belt;
 
 int main(int argc, char **argv) {
 
@@ -34,11 +34,11 @@ int main(int argc, char **argv) {
   init();
 
   while (1) {
-    if (!is_empty(conveyorBelt)) {
+    if(!is_empty(belt)) {
 
-      struct load new_load = pop(conveyorBelt); // comming load
+      struct load new_load = pop(belt); // comming load
 
-      if (new_load.weight > truckMaxLoad - occupiedSpace) {
+      if (new_load.weight + occupiedSpace >= truckMaxLoad ) {
          new_truck();
       }
       occupiedSpace += new_load.weight;
@@ -51,8 +51,8 @@ int main(int argc, char **argv) {
       // realising belt semaphore
       releaseBeltSem(semaphoreId, new_load.weight);
     } else {
-      printf("\nWaiting for package\n");
-      sleep(2);
+      printf("Waiting for package\n");
+      sleep(1);
     }
   }
   return 0;
@@ -70,14 +70,15 @@ void init() {
     exit(1);
   }
   printf("%d\n", shm_id );
-  // atach shared memory to conveyorBelt
-  conveyorBelt = shmat(shm_id, 0, 0);
+  // atach shared memory to belt
+  belt = shmat(shm_id, 0, 0);
 
-  conveyorBelt->head = 0;
-  conveyorBelt->tail = 0;
-  conveyorBelt->maxSize = MAX_QUEUE_SIZE;
-  conveyorBelt->size = 0;
-
+  belt->head = 0;
+  belt->tail = 0;
+  belt->maxSize = MAX_QUEUE_SIZE;
+  belt->size = 0;
+  belt->maxWeight = max_weight;
+  belt->currentWeight = 0;
   /// CREATING SEMAPHORES
 
   semaphoreId = semget(key, 3, IPC_CREAT | IPC_EXCL | 0666);
@@ -98,7 +99,7 @@ void init() {
 
 void exit_function() {
   // detach shared memory
-  shmdt(conveyorBelt);
+  shmdt(belt);
 
   if (shm_id >= 0) {
     shmctl(shm_id, IPC_RMID, NULL);
@@ -114,5 +115,6 @@ void signalHandler(int signo) {
 
 void new_truck() {
   printf("\n\nNew truck\n\n");
+  belt->currentWeight = 0;
   occupiedSpace = 0;
 }

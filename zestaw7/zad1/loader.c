@@ -24,7 +24,10 @@ int main(int argc, char **argv) {
   init();
 
   while (numberOfCycles > 0 || numberOfCycles == -1) {
-    double attempt = getCurrentTime();
+    struct load newPackage;
+    newPackage.loaderId = getpid();
+    newPackage.weight = packageLoad;
+    newPackage.time = getCurrentTime();
 
     // trying to get a semaphore to belt
     takeBeltSem(semaphoreId, packageLoad);
@@ -32,10 +35,9 @@ int main(int argc, char **argv) {
 
     takeTruckSem(semaphoreId);
 
-    push(belt, (struct load){packageLoad, getpid(), attempt});
-
-    printf("[%f] Placed load on belt. Weight: %i\tPid: %i\n", getCurrentTime(),
-           packageLoad, getpid());
+    if(push(belt, newPackage) != -1)
+        printf("[%f] Placed load on belt. Weight: %i\tPid: %i\n\t Belt current weight: %d\n", getCurrentTime(),
+              packageLoad, getpid(), belt->currentWeight);
 
     releaseTruckSem(semaphoreId);
 

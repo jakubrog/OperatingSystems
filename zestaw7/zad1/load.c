@@ -56,9 +56,7 @@ void releaseBeltSem(int semid, int weight) {
   if (semop(semid, &buf, 1) == -1)
     printf("Releasing conveyor weight semaphore");
 }
-////////////////////
 
-//
 int index_count(struct belt_queue *queue, int *index) {
   int oldIndex = *index;
   if (oldIndex + 1 >= queue->maxSize) {
@@ -68,13 +66,20 @@ int index_count(struct belt_queue *queue, int *index) {
   return oldIndex;
 }
 
-void push(struct belt_queue *queue, struct load elem) {
+int push(struct belt_queue *queue, struct load elem) {
   if (queue == NULL || queue->maxSize == 0)
     printf("null queue");
   if (isFull(queue))
     printf("full queue");
-  queue->array[index_count(queue, &queue->tail)] = elem;
+
+  if(queue->currentWeight + elem.weight > queue->maxWeight )
+      return -1;
+  int index = index_count(queue, &queue->tail);
+  queue->array[index] = elem;
+
+  queue->currentWeight += elem.weight;
   queue->size++;
+  return 0;
 }
 
 struct load pop(struct belt_queue *queue) {
@@ -83,8 +88,11 @@ struct load pop(struct belt_queue *queue) {
   if (is_empty(queue))
     printf("full queue");
 
+  int index = index_count(queue, &queue->head);
   queue->size--;
-  return queue->array[index_count(queue, &queue->head)];
+
+  queue->currentWeight -= queue->array[index].weight;
+  return queue->array[index];
 }
 
 int is_empty(struct belt_queue *queue) {

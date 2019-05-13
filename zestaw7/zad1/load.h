@@ -20,7 +20,7 @@
 
 #define MAX_LOAD 100
 #define MAX_QUEUE_SIZE 100
-#define TEMP_KEY 101
+#define TEMP_KEY 119
 
 #define ELEM_SEM_NO 0
 #define LOAD_SEM_NO 1
@@ -39,11 +39,13 @@ struct belt_queue {
   int tail;
   int size;
   int maxSize;
+  int currentWeight;
+  int maxWeight;
   struct load array[MAX_QUEUE_SIZE];
 };
 
 void init_belt_queue(struct belt_queue *queue);
-void push(struct belt_queue *queue, struct load elem);
+int push(struct belt_queue *queue, struct load elem);
 struct load pop(struct belt_queue *queue);
 int is_empty(struct belt_queue *queue);
 int isFull(struct belt_queue *queue);
