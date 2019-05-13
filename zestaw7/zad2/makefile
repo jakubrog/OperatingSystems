@@ -1,4 +1,4 @@
-CC = gcc -Wall -std=c11 -ggdb
+CC = gcc -Wall -std=gnu99 -ggdb -lpthread -lrt
 
 
 main:

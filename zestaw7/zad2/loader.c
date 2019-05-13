@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "load.h"
 //#include "sysopy.h"
 
@@ -9,8 +10,9 @@ int numberOfCycles = -1;
 int packageLoad = 0;
 
 int semaphoreId = -2;
-int sharedMemoryId = -2;
+int shm_id = -2;
 struct belt_queue *belt;
+sem_t *elem, *load, *queue;
 
 int main(int argc, char **argv) {
   if (argc < 2)
@@ -24,20 +26,24 @@ int main(int argc, char **argv) {
   init();
 
   while (numberOfCycles > 0 || numberOfCycles == -1) {
-    double attempt = getCurrentTime();
+    struct load newPackage;
+    newPackage.loaderId = getpid();
+    newPackage.weight = packageLoad;
+    newPackage.time = getCurrentTime();
 
     // trying to get a semaphore to belt
-    takeBeltSem(semaphoreId, packageLoad);
+    // takeBeltSem(semaphoreId, packageLoad);
+    sem_wait(load);
+    sem_wait(elem);
+    sem_wait(queue);
+
+    if(push(belt, newPackage) != -1)
+        printf("[%f] Placed load on belt. Weight: %i\tPid: %i\n\t Belt current weight: %d\n", getCurrentTime(),
+              packageLoad, getpid(), belt->currentWeight);
 
 
-    takeTruckSem(semaphoreId);
-
-    push(belt, (struct load){packageLoad, getpid(), attempt});
-
-    printf("[%f] Placed load on belt. Weight: %i\tPid: %i\n", getCurrentTime(),
-           packageLoad, getpid());
-
-    releaseTruckSem(semaphoreId);
+    sem_post(load);
+    sem_post(elem);
 
     if (numberOfCycles != -1)
       numberOfCycles--;
@@ -50,15 +56,30 @@ void init() {
 
   atexit(exit_function);
 
-  key_t key = TEMP_KEY;
+  shm_id = shm_open(SHM_PATH,  O_RDWR, 0666);
 
-  sharedMemoryId = shmget(key, sizeof(struct belt_queue) + 10, 0);
+  if(shm_id == -1){
+    printf("Shared memeory not created\n" );
+    exit(1);
+  }
+  printf("%d\n", shm_id );
+  // atach shared memory to belt
+  ftruncate(shm_id, sizeof(struct belt_queue));
+  belt = mmap(NULL, sizeof(struct belt_queue),
+                      PROT_READ | PROT_WRITE, MAP_SHARED, shm_id, 0);
 
-  belt = shmat(sharedMemoryId, 0, 0);
+  elem = sem_open(ELEM_SEM_NO,  O_RDWR);
 
-  semaphoreId = semget(key, 0, 0);
+
+  load = sem_open(LOAD_SEM_NO, O_RDWR );
+
+
+  queue = sem_open(QUEUE_SEM_NO, O_RDWR );
 }
 
 void exit_function() {
-  shmdt(belt);
+  munmap(belt, sizeof(struct belt_queue));
+  sem_close(elem);
+  sem_close(queue);
+  sem_close(load);
 }
