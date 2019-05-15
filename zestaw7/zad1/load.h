@@ -20,7 +20,7 @@
 
 #define MAX_LOAD 100
 #define MAX_QUEUE_SIZE 100
-#define TEMP_KEY 119
+#define TEMP_KEY 121
 
 #define ELEM_SEM_NO 0
 #define LOAD_SEM_NO 1
