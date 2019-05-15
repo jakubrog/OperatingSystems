@@ -37,7 +37,7 @@ struct image{
 struct thread_info{
   int threads_no;
   struct image input;
-  struct image result;
+  int **result_image;
   struct image filter;
   char *mode;
 }thread_info;

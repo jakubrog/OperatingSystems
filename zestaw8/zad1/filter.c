@@ -1,6 +1,32 @@
 #include "filter.h"
 
 
+void save_picture(int w, int h, int **out_pict_matrix, char *path) {
+    printf("hereisok\n");
+    FILE *fp = fopen(path, "w+");
+    if(!fp){
+      printf("Cannot open file %s\n", path );
+      exit(1);
+    }
+    char buff[1024];
+    fprintf(fp, "P2\n");
+    fprintf(fp, "%d %d\n", w, h);
+    fprintf(fp, "%d\n", 255);
+
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            if (j < w - 1) {
+                sprintf(buff, "%d ", out_pict_matrix[i][j]);
+            } else {
+                sprintf(buff, "%d\n", out_pict_matrix[i][j]);
+            }
+            fputs(buff, fp);
+        }
+    }
+    fclose(fp);
+}
+
+
 struct image read_image(char *path){
 
     struct image result;
@@ -20,11 +46,11 @@ struct image read_image(char *path){
     dimensions = strdup(buff);
     int width =  (int) strtol(strsep(&dimensions, " \t"), NULL, 10);
     int height = (int) strtol(strsep(&dimensions, " \t"), NULL, 10);
+    printf("h = %d w = %d\n",height, width);
 
-    printf("%d %d\n",height, width );
-    printf("Here is ok\n");
-
-    double picture[height][width];
+    double **picture = calloc(height, sizeof(double*));
+    for(int i = 0; i< height; i++)
+      picture[i] = calloc(width, sizeof(double));
 
     fgets(buff, BUFF_SIZE, file_in); // skip line
 
@@ -44,15 +70,35 @@ struct image read_image(char *path){
     }
 
     fclose(file_in);
-    result.width = x;
-    result.height = y;
+    result.width = width;
+    result.height = height;
     result.image = picture;
 
     return result;
 }
 
+clock_t sub_time(clock_t start, clock_t end) {
+    return (end - start) / CLOCKS_PER_SEC;
+}
+
 void *thread_start(void *arg){
-    printf("Works");
+
+    struct thread_arg *t_arg = (struct thread_arg*) arg;
+    struct thread_info *info = t_arg->info;
+
+    int k = t_arg->thread_no;
+    int m = info->threads_no;
+    int n = info->input.width;
+    int x, y;
+    clock_t start, end;
+    start = clock();
+     for( x = k ; x < k + 1 ; x++)
+       for(y = 0 ; y < info->input.height; y++){
+          info->result_image[y][x] = 200;
+    }
+    end = clock();
+    return (end - start) / CLOCKS_PER_SEC;
+
 }
 
 
@@ -60,13 +106,16 @@ int single_pixel(int x, int y, struct image pictrue, struct image filter) {
     double result = 0;
     int c = filter.height;
     int _x, _y;
+    /*
     for(int i = 0; i < c; i++)
         for(int j = 0; j < c; j++){
           _y = max(1, x-ceil((double)c/2) + i);
           _x = max(1, y-ceil((double)c/2) + j);
           result += pictrue.image[_y][_x] * filter.image[i][j];
     }
-    return (int)round(result) % 255;
+    */
+
+    return (int)round(pictrue.image[y][x] * 0.5) % 255;
 }
 
 
@@ -81,9 +130,16 @@ int main(int argc, char **argv){
     t_info->threads_no = atoi(argv[1]);
     t_info->input = read_image(argv[2]);
     t_info->filter = read_image(argv[3]);
+
+
+    int **result = calloc(t_info->input.height, sizeof(int*));
+    for(int i = 0; i< t_info->input.height; i++)
+       result[i] = calloc(t_info->input.width, sizeof(int));
+
+    t_info->result_image = result;
     t_info->mode = argv[4]; // BLOCK or INTERLEAVED
 
-    double result[t_info->threads_no];
+    double time_results[t_info->threads_no];
 
     pthread_t thread[t_info->threads_no];
     struct thread_arg t_arg[t_info->threads_no];
@@ -93,16 +149,28 @@ int main(int argc, char **argv){
        t_arg[i].info = t_info;
     }
 
+    clock_t start, end;
+    start = clock();
+
     for(int i = 0; i < t_info->threads_no; i++){
         pthread_create(&thread[i], NULL, thread_start, &t_arg[i]);
+        printf("creating %d\n",i );
+        usleep(10);
+    }
+    for(int i = 0; i<t_info->input.height; i++ ){
+      for(int j = 0; j< t_info->input.width;j++)
+          printf("%d ", t_info->result_image[i][j]);
+      printf("\n");
+    }
+  //  save_picture(t_info->input.height, t_info->input.width, t_info->result_image, "test.pgm");
+    sleep(2);
+    end = clock();
+
+    for(int i = 0; i < t_info->threads_no; i++){
+        pthread_join(thread[i], (void**)&time_results[i]);
+        printf("Thread no. time: %ld\n", time_results[i]);
     }
 
-
-
-    // for(int i = 0; i < t_info->threads_no; i++){
-    //     errno = pthread_join(&thread[i], (void**)&result);
-    //     if (s != 0)
-    //         handle_error_en(s, "pthread_join");
-    // }
+    printf("Main time: %ld \n", (end-start));
     return 0;
 }
