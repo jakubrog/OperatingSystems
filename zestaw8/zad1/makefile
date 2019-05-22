@@ -1,4 +1,4 @@
-CC = gcc -Wall -std=gnu99 -ggdb -lpthread -lrt -lm
+CC = gcc -Wall -std=gnu99 -ggdb -lpthread -lm
 IMAGE = check.pgm
 GEN = generate_filter
 FIL = filter

@@ -9,6 +9,10 @@
 
 
 int main(int argc, char **argv){
+  if(argc < 2){
+    printf("Not enough arguments\n");
+    exit(1);
+  }
   FILE *fp = fopen(argv[1], "w+");
   int c = atoi(argv[2]);
   fprintf(fp, "P1\n%d %d\n255\n", c, c);
