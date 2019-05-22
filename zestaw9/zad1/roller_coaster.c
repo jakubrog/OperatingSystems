@@ -58,27 +58,28 @@ void * car_thread_func(void *args){
           sem_wait(car_queue); // wait for your turn
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("Boarding to %d car has started\n", car_id);
+          printf("\nBoarding to %d car has started\n", car_id);
 
           for (j = 1; j <= capacity; j++){
                sem_post(queue); // allow capacity passengers to check in
            }
           sem_wait(boarding); // wait for boarding to complete
+          on_board_passenger_counter = 0;
+          gettimeofday(&tm2, NULL);
+          print_time(tm1, tm2);
+          printf("%d Boarding completed, door closed\n", car_id);
 
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("Boarding completed, door closed\n");
-
-          gettimeofday(&tm2, NULL);
-          print_time(tm1, tm2);
-          printf("Ride started\n");
+          printf("%d Ride started\n", car_id);
+          //sem_post(car_queue);
           usleep(100); // ride for a while
 
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("Ride ended\n");
+          printf("%d Ride ended\n", car_id);
+          //sem_wait(car_queue);
 
-          on_board_passenger_counter = 0;
           left_on_board_passengers = capacity;
           for (j = 1; j <= capacity; j++) { // start unloading passengers
                sem_post(riding);       // release a passenger
@@ -91,18 +92,19 @@ void * car_thread_func(void *args){
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
           printf("Unloading completed\n\n");
+
           sem_post(car_queue); // car is empty so another car can start
      }
      // done here and show messages
      gettimeofday(&tm2, NULL);
      print_time(tm1, tm2);
-     printf("Car no %d ended for today\n", car_id );
+     printf("Car no %d ended for today\n\n", car_id );
      pthread_exit(0);
 }
 
 
 int main(int argc, char **argv){
-
+    exit_function();
     int no_of_passengers,  // number of passengers in the park
          capacity,            // capacity of the car
          no_of_rides, // number of times the car rides
@@ -197,6 +199,7 @@ void initialize_semaphores(){
         printf("Cannot create semaphore car queue \n");
         exit(1);
     }
+
 }
 
 void print_time(struct timeval tm1, struct timeval tm2){
