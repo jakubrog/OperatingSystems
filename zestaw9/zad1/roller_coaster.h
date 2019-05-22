@@ -14,12 +14,12 @@
 #include <sys/stat.h>        /* For mode constants */
 #include <semaphore.h>
 
-#define QUEUE_KEY "/que1"
-#define CHECK_IN_KEY "/c1he"
-#define BOARDING_KEY "/bo1a"
-#define RIDING_KEY "/rid1"
-#define UNLOADING_KEY "/u1n"
-#define CAR_QUEUE_KEY "/ca1r"
+#define QUEUE_KEY "/queue_key"
+#define CHECK_IN_KEY "/check_in_key"
+#define BOARDING_KEY "/boarding_key"
+#define RIDING_KEY "/riding_key"
+#define UNLOADING_KEY "/unloading_key"
+#define CAR_QUEUE_KEY "/car_key"
 
 
 struct car_arg{

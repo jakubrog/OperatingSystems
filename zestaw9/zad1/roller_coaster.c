@@ -58,7 +58,7 @@ void * car_thread_func(void *args){
           sem_wait(car_queue); // wait for your turn
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("\nBoarding to %d car has started\n", car_id);
+          printf("Boarding to %d car has started\n", car_id);
 
           for (j = 1; j <= capacity; j++){
                sem_post(queue); // allow capacity passengers to check in
@@ -91,20 +91,19 @@ void * car_thread_func(void *args){
 
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("Unloading completed\n\n");
+          printf("Unloading completed\n");
 
           sem_post(car_queue); // car is empty so another car can start
      }
      // done here and show messages
      gettimeofday(&tm2, NULL);
      print_time(tm1, tm2);
-     printf("Car no %d ended for today\n\n", car_id );
+     printf("Car no %d ended for today\n", car_id );
      pthread_exit(0);
 }
 
 
 int main(int argc, char **argv){
-    exit_function();
     int no_of_passengers,  // number of passengers in the park
          capacity,            // capacity of the car
          no_of_rides, // number of times the car rides
@@ -169,34 +168,34 @@ int main(int argc, char **argv){
 
 
 void initialize_semaphores(){
-    queue = sem_open(QUEUE_KEY, O_CREAT | O_EXCL, O_RDWR, 0); // passenger waiting for a ride
+    queue = sem_open(QUEUE_KEY, O_WRONLY | O_CREAT | O_EXCL,S_IRWXU | S_IRWXG, 0); // passenger waiting for a ride
     if(queue == SEM_FAILED){
-        printf("Cannot create semaphore queue \n");
+        printf("Cannot create semaphore queue: %s \n", strerror(errno));
         exit(1);
     }
-    check_in = sem_open(CHECK_IN_KEY, O_CREAT | O_EXCL, O_RDWR, 1);      // check in counter
+    check_in = sem_open(CHECK_IN_KEY,  O_WRONLY | O_CREAT | O_EXCL,S_IRWXU | S_IRWXG, 1);      // check in counter
     if(check_in == SEM_FAILED){
-        printf("Cannot create semaphore check in \n");
+        printf("Cannot create semaphore check in: %s \n", strerror(errno));
         exit(1);
     }
-    boarding = sem_open(BOARDING_KEY, O_CREAT | O_EXCL, O_RDWR, 0);  // controls the boarding process
+    boarding = sem_open(BOARDING_KEY,  O_WRONLY | O_CREAT | O_EXCL,S_IRWXU | S_IRWXG, 0);  // controls the boarding process
     if(boarding == SEM_FAILED){
-        printf("Cannot create semaphore boarding \n");
+        printf("Cannot create semaphore boarding: %s \n", strerror(errno));
         exit(1);
     }
-    riding = sem_open(RIDING_KEY, O_CREAT | O_EXCL, O_RDWR, 0);      // keep passengers on the car so
+    riding = sem_open(RIDING_KEY, O_WRONLY | O_CREAT | O_EXCL,S_IRWXU | S_IRWXG, 0);      // keep passengers on the car so
     if(riding  == SEM_FAILED){
-        printf("Cannot create semaphore riding  \n");
+        printf("Cannot create semaphore riding: %s  \n", strerror(errno));
         exit(1);
     }
-    unloading = sem_open(UNLOADING_KEY, O_CREAT | O_EXCL, O_RDWR, 0);
+    unloading = sem_open(UNLOADING_KEY, O_WRONLY | O_CREAT | O_EXCL,S_IRWXU | S_IRWXG, 0);
     if(unloading == SEM_FAILED){
-        printf("Cannot create semaphore unloading \n");
+        printf("Cannot create semaphore unloading: %s\n", strerror(errno));
         exit(1);
     }
-    car_queue = sem_open(CAR_QUEUE_KEY, O_CREAT | O_EXCL, O_RDWR, 1);
+    car_queue = sem_open(CAR_QUEUE_KEY,  O_WRONLY | O_CREAT | O_EXCL, S_IRWXU | S_IRWXG, 1);
     if(car_queue == SEM_FAILED){
-        printf("Cannot create semaphore car queue \n");
+        printf("Cannot create semaphore car queue: %s\n", strerror(errno));
         exit(1);
     }
 
@@ -213,12 +212,19 @@ void exit_function(){
      sem_close(boarding);
      sem_close(riding);
      sem_close(unloading);
-     sem_unlink(QUEUE_KEY);
-     sem_unlink(CAR_QUEUE_KEY);
-     sem_unlink(CHECK_IN_KEY);
-     sem_unlink(BOARDING_KEY);
-     sem_unlink(RIDING_KEY);
-     sem_unlink(UNLOADING_KEY);
+
+     if(sem_unlink(QUEUE_KEY) != 0)
+          printf("Cannot unlink queue semaphore: %s\n", strerror(errno));
+     if(sem_unlink(CAR_QUEUE_KEY) != 0)
+        printf("Cannot unlink car semaphore: %s\n", strerror(errno));
+     if(sem_unlink(CHECK_IN_KEY) != 0)
+        printf("Cannot unlink check in semaphore: %s\n", strerror(errno));
+     if(sem_unlink(BOARDING_KEY) != 0)
+        printf("Cannot unlink boarding semaphore: %s\n", strerror(errno));
+     if(sem_unlink(RIDING_KEY) != 0)
+        printf("Cannot unlink riding semaphore: %s\n", strerror(errno));
+     if(sem_unlink(UNLOADING_KEY) != 0)
+        printf("Cannot unlink unloading semaphore: %s\n", strerror(errno));
 }
 void sigint_signal(int signum){
     exit_function();
