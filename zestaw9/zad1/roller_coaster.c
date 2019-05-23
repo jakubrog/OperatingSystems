@@ -22,13 +22,13 @@ void *take_ride(void *args)
 
          gettimeofday(&tm2, NULL);
          print_time(tm1, tm2);
-         printf("Passenger no. %d is on board with %d other passengers\n", passenger_id, on_board_passenger_counter);
+         printf("Passenger %d: on board with %d other passengers\n", passenger_id, on_board_passenger_counter);
          on_board_passenger_counter++;
 
          if (on_board_passenger_counter == capacity){
               gettimeofday(&tm2, NULL);
               print_time(tm1, tm2);
-              printf("Passenger %d clicked start\n", passenger_id);
+              printf("Passenger %d: clicked start\n", passenger_id);
               sem_post(boarding); // boaring completed
          }
         sem_post(check_in); // somone else can board now
@@ -36,8 +36,9 @@ void *take_ride(void *args)
 
         gettimeofday(&tm2, NULL);
         print_time(tm1, tm2);
-        printf("Passenger no. %d is leaving board with %d other passengers\n", passenger_id, left_on_board_passengers);
         left_on_board_passengers--;
+        printf("Passenger %d: leaving board with %d other passengers\n", passenger_id, left_on_board_passengers);
+
 
         sem_post(unloading); // this passenger has already left the car
     }
@@ -52,13 +53,11 @@ void * car_thread_func(void *args){
      int car_id = arg->id;
      struct timeval tm1 = arg->start_time;
      struct timeval tm2;
-
+     sem_wait(car_queue);  // wait for your first run
      for (i = 1; i <= no_of_rides; i++) {
-
-          sem_wait(car_queue); // wait for your turn
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("Boarding to %d car has started\n", car_id);
+          printf("Car %d: Boarding  has started\n", car_id);
 
           for (j = 1; j <= capacity; j++){
                sem_post(queue); // allow capacity passengers to check in
@@ -67,38 +66,41 @@ void * car_thread_func(void *args){
           on_board_passenger_counter = 0;
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("%d Boarding completed, door closed\n", car_id);
+          printf("Car %d: Boarding completed, door closed\n", car_id);
 
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("%d Ride started\n", car_id);
-          //sem_post(car_queue);
+          printf("Car %d: Ride started\n", car_id);
+
+          sem_post(car_queue);
+
           usleep(100); // ride for a while
 
+          sem_wait(car_queue); // wait to unload
+
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("%d Ride ended\n", car_id);
+          printf("Car %d: Ride ended, door open\n", car_id);
           //sem_wait(car_queue);
 
           left_on_board_passengers = capacity;
+
           for (j = 1; j <= capacity; j++) { // start unloading passengers
                sem_post(riding);       // release a passenger
                sem_wait(unloading);      // wait until this passenger is done
           }
-          gettimeofday(&tm2, NULL);
-          print_time(tm1, tm2);
-          printf("Door open\n");
+
 
           gettimeofday(&tm2, NULL);
           print_time(tm1, tm2);
-          printf("Unloading completed\n");
+          printf("Car %d: Unloading completed\n", car_id);
 
-          sem_post(car_queue); // car is empty so another car can start
      }
-     // done here and show messages
+
+     sem_post(car_queue);
      gettimeofday(&tm2, NULL);
      print_time(tm1, tm2);
-     printf("Car no %d ended for today\n", car_id );
+     printf("Car %d: Ended for today\n", car_id );
      pthread_exit(0);
 }
 
@@ -120,8 +122,8 @@ int main(int argc, char **argv){
           no_of_rides   = atoi(argv[4]);
      }
 
-     if (capacity > no_of_passengers) {
-          printf("Car capacity must be smaller than number of passengers\n");
+     if (capacity * no_of_cars > no_of_passengers) {
+          printf("Number of passengers must be grater than (number of cars) * (capacity)\n");
           exit(1);
      }
      initialize_semaphores();
@@ -159,7 +161,7 @@ int main(int argc, char **argv){
     for(int i = 0; i < no_of_passengers; i++){
         gettimeofday(&tm2, NULL);
         print_time(tm1, tm2);
-        printf("Passenger no %d is dead.\n", i+1);
+        printf("Passenger %d: dead\n", i+1);
         pthread_cancel(passengers[i]);
     }
 
