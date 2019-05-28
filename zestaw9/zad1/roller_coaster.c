@@ -204,7 +204,7 @@ void initialize_semaphores(){
 }
 
 void print_time(struct timeval tm1, struct timeval tm2){
-    printf("%d us. ", tm2.tv_usec - tm1.tv_usec);
+    printf("%ld us. ", tm2.tv_usec - tm1.tv_usec);
 }
 
 void exit_function(){

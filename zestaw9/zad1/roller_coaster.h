@@ -13,6 +13,7 @@
 #include <fcntl.h>           /* For O_* constants */
 #include <sys/stat.h>        /* For mode constants */
 #include <semaphore.h>
+#include<signal.h> 
 
 #define QUEUE_KEY "/queue_key"
 #define CHECK_IN_KEY "/check_in_key"
